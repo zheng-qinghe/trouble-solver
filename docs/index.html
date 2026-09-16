@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>modelwright · 会自我证伪的建模助手</title>
+<meta name="description" content="modelwright 是一个会自我证伪的建模助手：七条验证协议 + 可追溯台账，交付物里的每个数字都能被独立复算，并主动报告结论的失效边界。">
+<style>
+  :root{
+    --bg:#f5f7fa;
+    --bg-soft:#eef1f5;
+    --card:#ffffff;
+    --ink:#0f141a;
+    --ink-2:#39424e;
+    --muted:#6a7484;
+    --line:#e2e7ee;
+    --line-2:#cfd7e2;
+    --blue:#1d4ed8;
+    --blue-soft:#eaf0fe;
+    --teal:#0f766e;
+    --teal-soft:#e6f5f2;
+    --orange:#c2410c;
+    --orange-soft:#fdeee7;
+    --violet:#6d28d9;
+    --violet-soft:#f0eafd;
+    --amber:#b45309;
+    --amber-soft:#fdf3e3;
+    --gray:#5b6472;
+    --gray-soft:#eef1f4;
+    --green:#15803d;
+    --green-soft:#e8f6ec;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,
+      "PingFang SC","Hiragino Sans GB","Microsoft YaHei",monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.88em;background:var(--bg-soft);
+    border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:#243141}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+  /* ---------- 顶部导航 ---------- */
+  .nav{position:sticky;top:0;z-index:50;background:rgba(245,247,250,.88);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .nav .wrap{display:flex;align-items:center;gap:22px;height:58px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:-.01em;
+    color:var(--ink);font-size:16px;white-space:nowrap}
+  .brand:hover{text-decoration:none}
+  .brand .dot{width:11px;height:11px;border-radius:3px;background:var(--blue);flex:none}
+  .nav nav{display:flex;gap:18px;overflow-x:auto;scrollbar-width:none}
+  .nav nav::-webkit-scrollbar{display:none}
+  .nav nav a{color:var(--ink-2);font-size:13.5px;white-space:nowrap}
+  .nav .spacer{flex:1}
+  .nav .tag{font-family:var(--mono);font-size:11.5px;color:var(--muted);
+    border:1px solid var(--line-2);border-radius:999px;padding:2px 9px;white-space:nowrap}
+
+  /* ---------- 通用 ---------- */
+  section{padding:58px 0}
+  section+section{border-top:1px solid var(--line)}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.10em;text-transform:uppercase;
+    color:var(--blue);margin:0 0 10px}
+  h1{font-size:clamp(30px,4.6vw,50px);line-height:1.14;letter-spacing:-.028em;margin:0 0 18px;font-weight:800}
+  h2{font-size:clamp(23px,2.6vw,31px);line-height:1.25;letter-spacing:-.02em;margin:0 0 14px;font-weight:750}
+  h3{font-size:17px;margin:0 0 10px;font-weight:700;letter-spacing:-.01em}
+  p{margin:0 0 14px;color:var(--ink-2)}
+  .lead{font-size:18px;color:var(--ink-2);max-width:52em}
+  .muted{color:var(--muted);font-size:14.5px}
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:880px){.cols2,.cols3{grid-template-columns:1fr}}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px 20px 16px}
+  .card h3{display:flex;align-items:center;gap:8px}
+  .card ul{margin:6px 0 0;padding-left:19px;color:var(--ink-2);font-size:14.6px}
+  .card li{margin:4px 0}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11.5px;padding:2px 8px;
+    border-radius:999px;border:1px solid var(--line-2);color:var(--muted);background:#fff}
+  .mono{font-family:var(--mono)}
+
+  /* ---------- Hero ---------- */
+  .hero{padding:64px 0 52px}
+  .hero .badges{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}
+  .hero .one{font-size:clamp(19px,2.1vw,24px);font-weight:650;color:var(--ink);
+    border-left:4px solid var(--blue);padding:2px 0 2px 16px;margin:0 0 20px;line-height:1.5}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:34px}
+  @media(max-width:760px){.stats{grid-template-columns:1fr 1fr}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px}
+  .stat b{display:block;font-size:27px;line-height:1.15;letter-spacing:-.03em;font-weight:800}
+  .stat span{font-size:13.5px;color:var(--muted)}
+  .stat.b b{color:var(--blue)}
+  .stat.t b{color:var(--teal)}
+  .stat.o b{color:var(--orange)}
+  .stat.v b{color:var(--violet)}
+
+  /* ---------- 思维导图 ---------- */
+  .mapbox{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:10px 6px 6px;overflow-x:auto}
+  .mapbox svg{display:block;width:100%;min-width:1000px;height:auto}
+  .map-hint{display:flex;flex-wrap:wrap;gap:14px;align-items:center;
+    padding:10px 16px 6px;font-size:13px;color:var(--muted)}
+  .map-hint b{color:var(--ink-2)}
+  .branch{cursor:pointer}
+  .branch,.leaf{transition:opacity .18s}
+  .dim{opacity:.16}
+  .branch.active rect{stroke:#111827;stroke-width:2.5}
+  .leaf text{font-family:var(--sans);font-size:15px;fill:var(--ink-2)}
+  .leaf circle{fill:currentColor}
+  .branch-label{font-family:var(--sans);font-size:15.5px;font-weight:700;fill:#fff}
+  .root-label{font-family:var(--sans);font-weight:800;fill:#fff}
+  .root-sub{font-family:var(--mono);fill:rgba(255,255,255,.78)}
+
+  /* ---------- 表格 ---------- */
+  table{width:100%;border-collapse:collapse;background:var(--card);
+    border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;font-size:14.6px}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  td b{white-space:nowrap}
+  th{background:var(--bg-soft);font-weight:650;font-size:13.5px;color:var(--ink-2);white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  td code{white-space:nowrap}
+  .tbl-scroll{overflow-x:auto}
+
+  /* ---------- 代码块 ---------- */
+  .term{background:#0f1723;border-radius:var(--radius);padding:16px 18px;overflow-x:auto;
+    white-space:pre;font-style:normal;
+    font-family:var(--mono);font-size:12.7px;line-height:1.85;color:#c8d3e2}
+  .term .c{color:#6f8199}
+  .term .g{color:#7ee2a8}
+  .term .r{color:#ff9b8a}
+  .term .y{color:#ffd479}
+  .term .w{color:#e9eef6}
+  .codeblock{position:relative;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--radius);padding:14px 16px;overflow-x:auto;white-space:pre;font-style:normal;
+    font-family:var(--mono);font-size:13px;line-height:1.9;color:#243141}
+  .codeblock code,.term code{font-style:normal}
+  .copy{position:absolute;top:9px;right:9px;font-family:var(--sans);font-size:11.5px;
+    border:1px solid var(--line-2);background:#fff;color:var(--muted);border-radius:7px;
+    padding:3px 9px;cursor:pointer}
+  .copy:hover{color:var(--blue);border-color:var(--blue)}
+
+  /* ---------- 步骤 ---------- */
+  .steps{counter-reset:s;display:grid;gap:14px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 20px 14px 62px;position:relative}
+  .step:before{counter-increment:s;content:counter(s);position:absolute;left:18px;top:16px;
+    width:28px;height:28px;border-radius:50%;background:var(--blue-soft);color:var(--blue);
+    font-family:var(--mono);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .step h3{margin-bottom:6px}
+  .step .codeblock{margin-top:10px}
+  .step p:last-child{margin-bottom:0}
+
+  /* ---------- 状态机 ---------- */
+  .fsm{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0 16px}
+  .st{font-family:var(--mono);font-size:13px;border-radius:9px;padding:7px 13px;border:1px solid}
+  .st.ok{background:var(--green-soft);border-color:#b7e0c4;color:var(--green)}
+  .st.no{background:var(--orange-soft);border-color:#f2cdbb;color:var(--orange)}
+  .st.mid{background:var(--gray-soft);border-color:var(--line-2);color:var(--gray)}
+  .arrow{color:var(--muted);font-family:var(--mono)}
+
+  footer{padding:40px 0 64px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+  .note{background:var(--orange-soft);border:1px solid #f2cdbb;border-radius:12px;
+    padding:12px 16px;font-size:14.4px;color:#7c2d12}
+  .note.blue{background:var(--blue-soft);border-color:#c9d9fb;color:#1e3a8a}
+  .note.green{background:var(--green-soft);border-color:#b7e0c4;color:#14532d}
+  .note b{color:inherit}
+  ul.tight{margin:6px 0 0;padding-left:20px;color:var(--ink-2);font-size:14.8px}
+  ul.tight li{margin:5px 0}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="dot"></span>modelwright</a>
+    <nav>
+      <a href="#why">为什么做</a>
+      <a href="#map">思维导图</a>
+      <a href="#start">怎么用</a>
+      <a href="#protocols">七条协议</a>
+      <a href="#ledger">台账</a>
+      <a href="#noguess">数字零手写</a>
+      <a href="#proof">防护实测</a>
+      <a href="#not">它不做什么</a>
+      <a href="#roadmap">进度</a>
+    </nav>
+    <span class="spacer"></span>
+    <span class="tag">v0.1 · Apache-2.0</span>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ===================== HERO ===================== -->
+<section class="hero">
+  <div class="wrap">
+    <div class="badges">
+      <span class="pill">Python 3.9+</span>
+      <span class="pill">零依赖</span>
+      <span class="pill">单文件状态</span>
+      <span class="pill">Apache-2.0</span>
+      <span class="pill">本地 CLI</span>
+    </div>
+    <h1>会自我证伪的<br>建模助手</h1>
+    <p class="one">它不承诺"算得对"。它承诺：<b>你分得清哪一句是真的</b>——
+    每条结论都有状态、有证据、有一条能重算出它的命令。</p>
+    <p class="lead">
+      所有"AI 建模"工具都在解决<b>怎么写出来</b>（调 API 谁都会，这片是红海，
+      还跟学术诚信打架）。modelwright 解决的是另一个问题：
+      <b>怎么知道它是对的</b>。
+      差异化不在生成能力，而在两样东西——<b>验证协议库</b>（主动去找自己的反例）
+      和<b>可追溯台账</b>（把"可信度"变成可查询的字段）。
+    </p>
+    <div class="stats">
+      <div class="stat b"><b>7 条</b><span>验证协议，带判据、可自动跑</span></div>
+      <div class="stat t"><b>2 个</b><span>人工卡点，其余全自动</span></div>
+      <div class="stat o"><b>19 项</b><span>测试，其中 5 项是"防护真的会拦"</span></div>
+      <div class="stat v"><b>100%</b><span>交付数字来自脚本，零手写</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 为什么 ===================== -->
+<section id="why">
+  <div class="wrap">
+    <p class="kicker">需求来源</p>
+    <h2>每一个功能，都对应一次真实的翻车</h2>
+    <p class="lead">这不是从方法论推演出来的工具，是踩完坑之后把补丁固化下来的产物。
+    下面六条都真实发生过，每一条都能直接变成一条产品需求。</p>
+    <div class="tbl-scroll" style="margin-top:22px">
+      <table>
+        <thead><tr><th>真实踩坑</th><th>本质</th><th>变成哪个功能</th></tr></thead>
+        <tbody>
+          <tr><td>3° 步长扫描，整段跳过宽仅 2° 的违例带，输出"恒成立"的<b>假结论</b></td>
+              <td>离散采样会系统性骗人</td><td>协议 P2 细步重扫 + 对抗构造</td></tr>
+          <tr><td>粗网格把宽度不足 0.5% 的盲区窄峰<b>误报为 0</b></td>
+              <td>极值落在窄峰上，固定网格取不到</td><td>协议 P3 连续复核（报区间）</td></tr>
+          <tr><td>自建仿真的虚拟时间差点被填进正式测试的同一张表</td>
+              <td>数据口径没人管</td><td>协议 P6 口径声明 + 禁止混用</td></tr>
+          <tr><td>结论里的数字无法复算，只能靠嘴说</td>
+              <td>数字与脚本脱钩</td><td>协议 P7 台账对账：数字必须由脚本产出</td></tr>
+          <tr><td>图里落纸字号只有 3~4 pt、中文字体缺字形变方框</td>
+              <td>交付物质量没人守</td><td>交付自检（页数 / 字号 / 字形 / 脱敏）</td></tr>
+          <tr><td>交付物里分不清哪些结论可信、哪些是猜的</td>
+              <td>结论没有状态</td><td>台账状态机（已证 / 已证伪 / 待重验）</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 思维导图 ===================== -->
+<section id="map">
+  <div class="wrap">
+    <p class="kicker">思维导图</p>
+    <h2>一张图看懂 modelwright</h2>
+    <p class="lead">中间是它要解决的问题，左右六条主干分别是：为什么做、怎么记账、什么不做，
+    以及协议、流程、交付物。<b>点任意主干可跳到对应章节</b>，鼠标悬停会高亮该分支。</p>
+    <div class="mapbox" style="margin-top:22px">
+      <div class="map-hint">
+        <span><b>读法：</b>主干 = 产品的一个侧面；叶子 = 该侧面的具体条目</span>
+        <span><b>颜色：</b>蓝=协议 · 青=台账 · 橙=边界 · 紫=流程 · 棕=交付 · 灰=取舍</span>
+      </div>
+      <div id="mindmap"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 怎么用 ===================== -->
+<section id="start">
+  <div class="wrap">
+    <p class="kicker">快速开始</p>
+    <h2>怎么用：一条命令跑通一个闭环</h2>
+    <p class="lead">不需要 API key，不需要数据库，不需要服务端。一个案例 = 一个文件夹，
+    状态全在文件里，看得见、改得动、能回滚。</p>
+
+    <div class="steps" style="margin-top:26px">
+      <div class="step">
+        <h3>拿到代码，跑起来</h3>
+        <p>不装也能跑（把 <code>src</code> 加进模块路径即可）；想用 <code>mm</code> 这个短命令就本地安装。</p>
+        <div class="codeblock"><button class="copy">复制</button>git clone &lt;repo&gt; &amp;&amp; cd modelwright
+
+# 方式一：免安装
+PYTHONPATH=src python -m mm.cli --help
+
+# 方式二：装成命令（开发模式）
+pip install -e .
+mm --help</div>
+      </div>
+
+      <div class="step">
+        <h3>先写《问题说明书》——这是卡点①</h3>
+        <p>生成模板 → 填 12 个小节 → 机器校验。<b>不通过就不许进入建模</b>：
+    因为 90% 的返工都源于"问题没问全"，而不是"算错了"。</p>
+        <div class="codeblock"><button class="copy">复制</button>mm charter new  mycase/charter.md      # 生成 12 节模板
+#  …… 填：现象/目标/决策/约束/数据/成功标准/时间尺度/相关方/
+#         已有尝试/边界/风险与底线/口径表；【未知】项必须给出处理计划
+mm charter check mycase/charter.md      # 卡点①：不通过则退出码 2</div>
+      </div>
+
+      <div class="step">
+        <h3>备好四件套，然后 <code>mm solve</code></h3>
+        <p>求解脚本只负责算，把数字全部写进 <code>out/metrics.json</code>；
+    报告模板只负责说，数字一律写成占位符。二者由工具焊在一起。</p>
+        <div class="codeblock"><button class="copy">复制</button>mm solve mycase     # 形式化 → 基线 → 建模 → 证伪 → 台账 → 交付
+mm audit mycase     # 临时目录独立重跑 + 逐数字对账 + 状态漂移检查
+mm ledger check mycase/ledger.json    # 只查台账（快）</div>
+      </div>
+
+      <div class="step">
+        <h3>把结论钉在台账上</h3>
+        <p>每条结论一个条目：状态、方法、跑过哪些协议、口径、证据文件、重算命令、依赖。
+    报告只能引用 <code>verified</code> 的条目。</p>
+        <div class="codeblock"><button class="copy">复制</button>mm ledger show mycase/ledger.json     # 看全部结论与状态分布</div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:34px">案例目录约定（一个文件夹说清一切）</h3>
+    <div class="tbl-scroll" style="margin-top:12px">
+      <table>
+        <thead><tr><th>文件</th><th>角色</th><th>谁看</th></tr></thead>
+        <tbody>
+          <tr><td><code>charter.md</code></td><td>问题说明书（阶段 0 产物，卡点① 凭据）</td><td>业务方 / 决策者</td></tr>
+          <tr><td><code>solve.py</code></td><td>求解脚本：<b>唯一的数字出口</b></td><td>任何复现的人</td></tr>
+          <tr><td><code>ledger.spec.json</code></td><td>结论清单（声明式：id / claim / 协议 / 口径 / 依赖）</td><td>复核者</td></tr>
+          <tr><td><code>report.template.md</code></td><td>报告模板，数字只能写占位符</td><td>决策者</td></tr>
+          <tr><td><code>falsify.template.md</code></td><td>证伪记录模板（七条协议逐条留痕）</td><td>复核者</td></tr>
+          <tr><td><code>expected.json</code></td><td>冻结的关键数字（golden 文件）</td><td>机器</td></tr>
+          <tr><td><code>out/metrics.json</code></td><td>脚本产出，不入库</td><td>机器</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:34px">跑起来长这样（真实输出）</h3>
+    <div class="term" style="margin-top:12px"><span class="c">$ mm solve examples/newsvendor_inventory</span>
+<span class="w">【阶段 0 形式化】问题说明书：通过</span>
+<span class="w">【阶段 1-2 基线与建模】求解脚本已运行，数字出口 out/metrics.json</span>
+  基线 Q0=150 件，周期望利润=1007.35 元（键 baseline）
+<span class="w">【阶段 3-5 证伪与交付】台账 9 条，状态分布 {"verified": 8, "refuted": 1}</span>
+  已生成 report.md
+  已生成 falsify.md
+<span class="g">闭环通过：报告/证伪记录里的每个数字都来自 out/metrics.json（P7）</span>
+
+<span class="c">$ mm audit examples/newsvendor_inventory</span>
+<span class="w">【阶段 6 复核】已在临时目录独立重跑 solve.py</span>
+  逐数字对账 40 项
+  台账 9 条，状态分布 {"verified": 8, "refuted": 1}
+<span class="g">复核通过：数字可复算、结论状态未漂移</span></div>
+  </div>
+</section>
+
+<!-- ===================== 七条协议 ===================== -->
+<section id="protocols">
+  <div class="wrap">
+    <p class="kicker">产品本体</p>
+    <h2>七条验证协议</h2>
+    <p class="lead">不是提示词技巧，而是<b>可执行、带判据、能自动跑</b>的检查。
+    其中 P2 / P3 / P5 是"主动去找自己的错"，也是真正的门槛——
+    它们要求的不是算力，是<b>对抗自己的意愿</b>。</p>
+    <div class="tbl-scroll" style="margin-top:22px">
+      <table>
+        <thead><tr><th>#</th><th>协议</th><th>判据</th><th>来历（实战翻车）</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">P1</td><td><b>双路径交叉</b></td>
+              <td>同一结论用两种<b>独立</b>方法实现（解析式 / 数值 / 仿真），相对误差 &lt; 1e-9；不通过就查哪一路写错，两路都进台账</td>
+              <td>闭式解与半平面交互相印证</td></tr>
+          <tr><td class="mono">P2</td><td><b>细步重扫</b></td>
+              <td>凡出现"恒成立 / 一定 / 总是 / 从无例外"：步长细化 <b>≥10×</b> 重扫，<b>并主动构造最坏构型</b></td>
+              <td>3° 步长跳过宽 2° 的违例带，得出"恒成立"的假结论；0.1° 细扫后结论被推翻</td></tr>
+          <tr><td class="mono">P3</td><td><b>连续复核</b></td>
+              <td>离散网格算出的极值必须用连续 / 自适应搜索复核，<b>报区间，禁止报单点</b></td>
+              <td>网格峰值 vs 连续上确界只差 0.0001，但固定网格会把"很小的正数"误报成 0</td></tr>
+          <tr><td class="mono">P4</td><td><b>极限与量纲</b></td>
+              <td>参数 → 0 / ∞ / 临界值时须退化为已知结果；量纲自洽</td>
+              <td>临界值处判据恰好取等，可用于反查公式</td></tr>
+          <tr><td class="mono">P5</td><td><b>反例搜索</b></td>
+              <td><b>主动搜</b>使结论翻转的参数区域，报"翻转边界"；找不到也要写明<b>搜索范围与未覆盖区域</b></td>
+              <td>外环相位偏移半步，就能让"零盲区"变成相反结论</td></tr>
+          <tr><td class="mono">P6</td><td><b>口径声明</b></td>
+              <td>每个数字标：来源 / 定义 / 适用边界 / 能否外推；有分歧的<b>两套都算</b>，禁止相减</td>
+              <td>虚拟时间与官方测试数字量纲不同，差点进同一张表比较</td></tr>
+          <tr><td class="mono">P7</td><td><b>台账对账</b></td>
+              <td>对外每个数字都能由一条命令从原始数据重算，<b>禁止手抄</b></td>
+              <td>所有统计值由脚本产 JSON，报告读 JSON</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cols3" style="margin-top:20px">
+      <div class="card"><h3>「未触发」要写出来</h3>
+        <p class="muted" style="margin:0">没出现"恒成立"类断言，不等于不用检查——是<b>检查了才发现不需要 P2</b>。
+        留空 ≠ 通过，留空只是没人知道你做没做。</p></div>
+      <div class="card"><h3>「未覆盖」要写出来</h3>
+        <p class="muted" style="margin:0">搜不到反例时，写清搜索范围与没覆盖的区域，
+        而不是写"未发现反例"。</p></div>
+      <div class="card"><h3>「已证伪」要留痕</h3>
+        <p class="muted" style="margin:0">删掉错误结论等于让同一个错误再来一次。
+        台账里的 <code>refuted</code> 是资产，不是污点。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 台账 ===================== -->
+<section id="ledger">
+  <div class="wrap">
+    <p class="kicker">第二个护城河</p>
+    <h2>可追溯台账：把"可信度"变成字段</h2>
+    <p class="lead">AI 建模最大的信任问题不是"算错"，而是<b>分不清哪句是真的</b>。
+    台账把这件事变成一个可查询、可校验、可传播的字段。</p>
+
+    <div class="fsm" style="margin-top:24px">
+      <span class="st mid">new</span><span class="arrow">→</span>
+      <span class="st mid">verifying</span><span class="arrow">→</span>
+      <span class="st ok">verified ✓ 可被引用</span>
+      <span class="arrow">&nbsp;│&nbsp;上游改动&nbsp;→&nbsp;</span>
+      <span class="st no">stale 作废待重验</span>
+      <span class="arrow">&nbsp;／&nbsp;</span>
+      <span class="st no">refuted 已证伪（留痕，不删）</span>
+    </div>
+
+    <div class="cols2">
+      <div class="card">
+        <h3>一条台账长什么样</h3>
+        <div class="codeblock" style="border:none;padding:0;background:transparent;font-size:12.6px">{
+  "id": "C-017",
+  "claim": "环覆盖证书在 (ρ=980, n=8) 下成立，最大未覆盖距离 970.03 m",
+  "status": "verified",
+  "method": "解析不等式 + 网格枚举（0.1° 细扫）",
+  "protocols": ["P1", "P3"],
+  "caliber": {
+    "定义": "d_max = 环上相邻站角平分线处的最坏距离",
+    "适用边界": "R=1800, r_min=1000；ρ&gt;r_min 时不成立",
+    "可外推": false
+  },
+  "evidence": ["out/metrics.json", "report.md"],
+  "recompute": "python solve.py",
+  "depends_on": ["C-005", "C-007"]
+}</div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <h3>对账规则（缺一即报错）</h3>
+          <ul class="tight">
+            <li><b>证据文件存在</b>——不是"我记得有"</li>
+            <li><b>有重算命令</b>——没有重算命令的结论等于口说无凭</li>
+            <li><b>有口径定义</b>——同一个数字换个口径可能是另一个意思</li>
+            <li><b>依赖干净</b>——不得引用已证伪 / 已作废的条目</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>stale 沿依赖链传播</h3>
+          <p class="muted" style="margin:0">改一个上游参数，<code>invalidate()</code> 会把这条
+          及其<b>全部下游</b>一起置为 <code>stale</code>。机器告诉你哪些结论已经过期，
+          而不是靠人回忆"这条是不是也受那个参数影响"。</p>
+        </div>
+      </div>
+    </div>
+    <div class="note blue" style="margin-top:18px">
+      <b>为什么 <code>audit</code> 必须在临时目录重跑：</b>同目录重跑留了一个隐蔽的作弊面——
+      上一步的产物还在原地，"重跑"可能只是读了上次的结果。复制到临时目录、
+      让 <code>out/</code> 不存在再跑，才是真正的从原始数据重算一遍。
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 数字零手写 ===================== -->
+<section id="noguess">
+  <div class="wrap">
+    <p class="kicker">P7 的执行体</p>
+    <h2>数字零手写：不是靠自觉，是靠跑不过去</h2>
+    <p class="lead">"报告里的数字必须来自脚本"这句话，如果只写在文档里，等于没写。
+    modelwright 把它做成<b>构建期硬失败</b>：模板里只能写占位符，取不到值就报错退出，
+    连留空的机会都没有。</p>
+
+    <div class="cols2" style="margin-top:22px">
+      <div class="card">
+        <h3>模板里这样写（不允许出现任何手写数字）</h3>
+        <div class="codeblock" style="background:var(--bg-soft)">建议每周备货 {{m.result.recommend_Q}} 件，
+相对基线多 {{m.result.gain_vs_baseline_per_week|.2f}} 元/周
+（+{{m.result.gain_vs_baseline_pct|.1f}}%），
+失效边界：促销概率 ≥ {{m.P5_counterexample.flip_point|.0%}}</div>
+      </div>
+      <div class="card">
+        <h3>渲染出来的成品</h3>
+        <div class="codeblock" style="background:var(--green-soft);border-color:#b7e0c4">建议每周备货 133 件，
+相对基线多 50.85 元/周
+（+5.0%），
+失效边界：促销概率 ≥ 25%</div>
+        <p class="muted" style="margin:10px 0 0">格式交给 Python（<code>.2f</code> / <code>.1%</code> / <code>,.0f</code>），
+        数字交给 <code>metrics.json</code>，人只负责写字。</p>
+      </div>
+    </div>
+
+    <div class="cols2" style="margin-top:16px">
+      <div class="card">
+        <h3>三个容易漏的后门（都已堵上）</h3>
+        <ul class="tight">
+          <li><b>口径字段里的数字</b>：<code>caliber.适用边界</code> 常写"概率 ≥ 某值即失效"，
+          若只渲染 claim，口径就成了手抄的后门 → 递归渲染整棵树</li>
+          <li><b>错别字会静默漏过</b>：占位符路径原本只认 ASCII，
+          <code>{{m.需求}}</code> 这类写错会既不报错也不替换 → 改为匹配任意路径字符</li>
+          <li><b>注释里的示例</b>：模板开头的说明注释写了占位符示例，会被当成本尊去找值
+          → 渲染前先剥离注释，注释也不进交付物</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>还有个隐蔽的坑</h3>
+        <p style="margin:0 0 8px"><b>JSON 键名不要带点号。</b>
+        写成 <code>profit_band_0.1pct</code>，占位符路径 <code>m.P3_continuous.profit_band_0.1pct.0</code>
+        就会被点号切断，渲染期直接报"取不到值"。改成 <code>profit_band_0p1pct</code> 即可。</p>
+        <p class="muted" style="margin:0">这不只是洁癖：它会在跑的时候炸出来，而不是在交付之后被人发现。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 防护实测 ===================== -->
+<section id="proof">
+  <div class="wrap">
+    <p class="kicker">防护实测</p>
+    <h2>不是"设计了防护"，是"防护真的会拦"</h2>
+    <p class="lead">测试里专门留了 5 项负例——故意把事情做错，看工具会不会放过去。
+    下面三个是真实输出。</p>
+
+    <div style="margin-top:22px;display:grid;gap:16px">
+      <div class="card">
+        <h3>① 悄悄改一个参数（价格 25 → 26）</h3>
+        <p class="muted" style="margin:0 0 10px">同一个案例重跑，数字必然会变。审计会逐项报出来，逼你显式确认这次漂移是"有意的"。</p>
+        <div class="term"><span class="c">$ mm audit ./case</span>
+  数字漂移：result.recommend_Q 期望 133，实测 134（容差 1e-09）
+  数字漂移：result.Q_vs_baseline 期望 -17，实测 -16（容差 1e-09）
+  数字漂移：result.gain_vs_baseline_per_week 期望 50.846…，实测 47.769…
+<span class="r">复核未通过（5 项）</span></div>
+      </div>
+
+      <div class="card">
+        <h3>② 用户还没确认口径（卡点①）</h3>
+        <p class="muted" style="margin:0 0 10px">问题说明书里 <code>用户确认：否</code>，后面直接不给往下走——因为这里错了，后面全白做。</p>
+        <div class="term"><span class="c">$ mm solve ./case</span>
+<span class="w">【阶段 0 形式化】问题说明书：未通过</span>
+  缺失小节      : 无
+  已知/未知/假设 : 3 / 4 / 1
+  口径表        : 4 行（未填完 0 行，判定不一致/需双算 2 行）
+  用户已确认    : <span class="r">否</span>
+  未处理的未知项: 无
+  结论          : 不通过
+卡点① 未通过：问题说明书不完整，禁止进入建模</div>
+      </div>
+
+      <div class="card">
+        <h3>③ 模板里写了一个不存在的键</h3>
+        <p class="muted" style="margin:0 0 10px">不是静默留空，是直接失败——不给"猜一个数字印上去"留任何空间。</p>
+        <div class="term"><span class="c">$ mm solve ./case</span>
+  已生成 falsify.md
+<span class="r">对账未通过（1 项）：</span>
+  - 模板 report.template.md 有 1 个占位符无法从 metrics.json 取值：m.nonexistent.key</div>
+      </div>
+    </div>
+
+    <div class="note green" style="margin-top:18px">
+      另外 14 项常规测试覆盖：空白《问题说明书》必须判不通过、<code>【未知】</code>项没有处理计划必须拦、
+      标 verified 却没证据 / 没重算命令 / 没口径定义必须拦、引用已证伪条目必须拦、
+      <code>refuted</code> 条目本身<b>不报错</b>（它是留痕不是错误）、依赖链 stale 传播不影响无关条目。
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 它不做什么 ===================== -->
+<section id="not">
+  <div class="wrap">
+    <p class="kicker">边界</p>
+    <h2>它不做什么（v0.1 明确砍掉）</h2>
+    <p class="lead">产品文案避免"保证最优"，改成"<b>给出可验证的次优解 + 失效边界</b>"。
+    同样地，功能清单里"不做什么"和"做什么"一样重要。</p>
+    <div class="cols2" style="margin-top:22px">
+      <div class="card">
+        <h3 style="color:var(--green)">✓ 做</h3>
+        <ul class="tight">
+          <li>CLI 一条命令跑通单个问题的完整闭环</li>
+          <li>七条验证协议 + 台账（状态机 / 对账 / stale 传播）</li>
+          <li>输出报告 + 证伪记录 + 台账 + 一键复现脚本</li>
+          <li>报告强制包含"局限与失效边界"章节</li>
+          <li>本地文件为唯一状态，没有隐藏状态</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--orange)">✗ 不做</h3>
+        <ul class="tight">
+          <li>生成竞赛论文（红海，且与学术诚信冲突）</li>
+          <li>Web UI / 前端 / 账号体系 / 支付</li>
+          <li>多智能体角色扮演（Persona 花活）</li>
+          <li>数据库 / 向量库 / 服务端</li>
+          <li>对接外部业务系统（留给社区）</li>
+        </ul>
+      </div>
+    </div>
+    <div class="note" style="margin-top:18px">
+      <b>定位提醒：</b>它不是"自动解题神器"。它不替你想模型，也不替你写数字；
+      它做两件事——<b>卡住不该往下走的</b>（两个人工卡点），
+      以及<b>把结论钉在脚本上</b>（台账 + 占位符）。
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 进度 ===================== -->
+<section id="roadmap">
+  <div class="wrap">
+    <p class="kicker">进度</p>
+    <h2>里程碑</h2>
+    <div class="tbl-scroll" style="margin-top:20px">
+      <table>
+        <thead><tr><th>阶段</th><th>交付</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">W1</td><td>骨架 + 三阶段 + 台账 + 卡点校验 + 一个业务案例跑通全闭环 + 独立复核</td>
+              <td><b style="color:var(--green)">已完成</b>（可运行、19 项测试通过）</td></tr>
+          <tr><td class="mono">W2</td><td>七条协议插件化（<code>protocols/p1..p7.py</code>）+ 把真实竞赛案例脱敏成第二个回归案例</td>
+              <td style="color:var(--muted)">待启动</td></tr>
+          <tr><td class="mono">W3</td><td>报告 / 图表 / 合规产出模块（600 dpi、禁彩色文字、缺字形检测、身份脱敏自检）</td>
+              <td style="color:var(--muted)">规划中</td></tr>
+          <tr><td class="mono">W4</td><td>README 打磨 + 技术文章 + 发布 v0.1</td>
+              <td style="color:var(--muted)">规划中</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top:34px">仓库结构</h3>
+    <div class="codeblock" style="margin-top:12px">modelwright/
+├── prompts/            阶段提示词：00 引导提问 · 20 建模 · 30 证伪 · 50 交付
+├── src/mm/
+│   ├── cli.py          命令入口：charter / ledger / solve / audit
+│   ├── charter.py      问题说明书 12 节机器校验（卡点①）
+│   ├── ledger.py       台账状态机 + stale 依赖传播 + 交付前对账
+│   ├── case.py         案例编排：solve 与 audit
+│   └── report.py       模板渲染：数字只能从 metrics.json 注入
+├── examples/newsvendor_inventory/    业务案例（单 SKU 备货，报童模型）
+├── tests/              19 项，含 5 项负例（"防护真的会拦"）
+├── docs/               协议详解 · 台账详解 · 本发布页
+└── LICENSE             Apache-2.0</div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <b>modelwright</b> · 会自我证伪的建模助手 · v0.1 ·
+    许可 <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache-2.0</a>（含专利授权）<br>
+    <span style="font-size:13.5px">一句话：让一个不懂建模的人，拿到一份"<b>知道自己哪里可能错</b>"的解答包。</span>
+  </div>
+</footer>
+
+<script>
+/* ============ 思维导图：数据 ============ */
+const MIND = [
+  { side:'left', color:'#c2410c', title:'为什么做', anchor:'#why', items:[
+    '窄带陷阱：3° 步长跳过 2° 违例带',
+    '窄峰被网格吃掉：极小正数误报为 0',
+    '口径混用：虚拟时间差点进正式表',
+    '数字不可复算：结论只能靠嘴说',
+    '交付质量没人守：字号 3pt、字形方框',
+    '结论没有状态：分不清哪句是真的'
+  ]},
+  { side:'left', color:'#0f766e', title:'可追溯台账', anchor:'#ledger', items:[
+    '5 态状态机 new → verified',
+    'refuted 留痕：证伪的也保留',
+    'stale 沿依赖链自动传播',
+    '每条带证据文件 + 重算命令',
+    '报告只许引用 verified 条目'
+  ]},
+  { side:'left', color:'#5b6472', title:'它不做什么', anchor:'#not', items:[
+    '✗ 不生成竞赛论文',
+    '✗ 无 Web UI / 账号 / 支付',
+    '✗ 无多智能体角色扮演',
+    '✗ 无数据库 / 服务端'
+  ]},
+  { side:'right', color:'#1d4ed8', title:'七条验证协议', anchor:'#protocols', items:[
+    'P1 双路径交叉｜相对误差 < 1e-9',
+    'P2 细步重扫｜≥10× + 最坏构型',
+    'P3 连续复核｜报区间不报单点',
+    'P4 极限与量纲｜退化到已知结果',
+    'P5 反例搜索｜找结论翻转边界',
+    'P6 口径声明｜定义/边界/可外推',
+    'P7 台账对账｜禁止手抄数字'
+  ]},
+  { side:'right', color:'#6d28d9', title:'工作流与卡点', anchor:'#start', items:[
+    '卡点① 口径确认（机器校验）',
+    '卡点② 基线必须可复现',
+    '0 形式化 → 1 基线 → 2 建模求解',
+    '3 证伪 → 4 稳健 → 5 交付',
+    '6 复核：换目录独立重跑'
+  ]},
+  { side:'right', color:'#b45309', title:'交付物与命令', anchor:'#start', items:[
+    'report.md：结论 + 失效边界',
+    'falsify.md：证伪逐条留痕',
+    'ledger.json：可追溯台账',
+    'out/metrics.json：数字唯一出口',
+    'mm solve / audit / ledger check'
+  ]}
+];
+
+/* ============ 思维导图：布局与绘制 ============ */
+(function renderMindMap(){
+  const W = 1400, LEAF_H = 30, GAP = 46, PAD = 40;
+  const NODE_W = 170, NODE_H = 38, ROOT_W = 200, ROOT_H = 78;
+  const CX = W / 2;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const el = (tag, attrs) => {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    return n;
+  };
+  const tx = (tag, attrs, s) => { const n = el(tag, attrs); n.textContent = s; return n; };
+  const curve = (x1, y1, x2, y2) =>
+    `M${x1},${y1} C${(x1+x2)/2},${y1} ${(x1+x2)/2},${y2} ${x2},${y2}`;
+
+  /* ---- 尺寸：左右两侧各自纵向居中 ---- */
+  const left  = MIND.filter(b => b.side === 'left');
+  const right = MIND.filter(b => b.side === 'right');
+  const sideH = arr => arr.reduce((s, b) => s + b.items.length * LEAF_H, 0)
+                     + (arr.length - 1) * GAP;
+  const H = Math.max(sideH(left), sideH(right)) + PAD * 2;
+  const ROOT_Y = H / 2;
+
+  [left, right].forEach(arr => {
+    let y = (H - sideH(arr)) / 2;
+    arr.forEach(b => {
+      b.y0 = y;                                    // 该分支叶子块顶部
+      b.cy = y + b.items.length * LEAF_H / 2;      // 分支节点中心
+      y += b.items.length * LEAF_H + GAP;
+    });
+  });
+
+  const svg = el('svg', {
+    viewBox: `0 0 ${W} ${H}`, role: 'img',
+    'aria-label': 'modelwright 思维导图：为什么做、可追溯台账、它不做什么、七条验证协议、工作流与卡点、交付物与命令'
+  });
+  const gBranches = el('g', {});
+  svg.appendChild(gBranches);
+
+  /* ---- 六个分支 ---- */
+  MIND.forEach(b => {
+    const isLeft = b.side === 'left';
+    const nodeX = isLeft ? CX - 150 - NODE_W : CX + 150;
+    const nodeEdge = isLeft ? nodeX : nodeX + NODE_W;          // 靠中心的一侧
+    const spineX = isLeft ? nodeX - 34 : nodeX + NODE_W + 34;  // 竖向“脊”
+    const stubX  = isLeft ? spineX - 12 : spineX + 12;         // 指向叶子的短横线
+    const ys = b.items.map((_, i) => b.y0 + i * LEAF_H + LEAF_H / 2);
+
+    const g = el('g', {class: 'branch', 'data-anchor': b.anchor});
+    g.appendChild(tx('title', {}, '点击跳到对应章节'));
+
+    // 根 → 分支节点
+    g.appendChild(el('path', {
+      d: isLeft ? curve(CX - ROOT_W/2, ROOT_Y, nodeEdge, b.cy)
+                : curve(CX + ROOT_W/2, ROOT_Y, nodeEdge, b.cy),
+      fill: 'none', stroke: b.color, 'stroke-width': 2.4,
+      'stroke-opacity': .5, 'stroke-linecap': 'round'
+    }));
+
+    // 分支节点
+    g.appendChild(el('rect', {
+      x: nodeX, y: b.cy - NODE_H/2, width: NODE_W, height: NODE_H,
+      rx: 10, fill: b.color
+    }));
+    g.appendChild(tx('text', {
+      class: 'branch-label', x: nodeX + NODE_W/2, y: b.cy + 5,
+      'text-anchor': 'middle'
+    }, b.title));
+
+    // 节点 → 竖脊 → 各叶子
+    const spine = el('g', {
+      fill: 'none', stroke: b.color, 'stroke-width': 1.6,
+      'stroke-opacity': .42, 'stroke-linecap': 'round'
+    });
+    spine.appendChild(el('line', {
+      x1: nodeEdge, y1: b.cy, x2: spineX, y2: b.cy,
+      'stroke-width': 2, 'stroke-opacity': .5
+    }));
+    spine.appendChild(el('line', {
+      x1: spineX, y1: Math.min(b.cy, ys[0]), x2: spineX, y2: ys[ys.length - 1]
+    }));
+    ys.forEach(y => spine.appendChild(el('line', {x1: spineX, y1: y, x2: stubX, y2: y})));
+    g.appendChild(spine);
+
+    // 叶子
+    b.items.forEach((label, i) => {
+      const y = ys[i];
+      const leaf = el('g', {class: 'leaf', style: `color:${b.color}`});
+      leaf.appendChild(el('circle', {cx: stubX + (isLeft ? -4 : 4), cy: y, r: 2.6}));
+      leaf.appendChild(tx('text', {
+        x: isLeft ? stubX - 14 : stubX + 14, y: y + 4.6,
+        'text-anchor': isLeft ? 'end' : 'start'
+      }, label));
+      g.appendChild(leaf);
+    });
+
+    // 交互：点进章节、悬停高亮本支
+    g.addEventListener('click', () => {
+      const target = document.querySelector(b.anchor);
+      if (target) target.scrollIntoView({behavior: 'smooth', block: 'start'});
+    });
+    g.addEventListener('mouseenter', () => {
+      Array.from(gBranches.children).forEach(o => o.classList.toggle('dim', o !== g));
+      g.classList.add('active');
+    });
+    g.addEventListener('mouseleave', () => {
+      Array.from(gBranches.children).forEach(o => o.classList.remove('dim'));
+      g.classList.remove('active');
+    });
+
+    gBranches.appendChild(g);
+  });
+
+  /* ---- 中心节点（画在最上层）---- */
+  const root = el('g', {});
+  root.appendChild(el('rect', {
+    x: CX - ROOT_W/2, y: ROOT_Y - ROOT_H/2, width: ROOT_W, height: ROOT_H,
+    rx: 16, fill: '#111827'
+  }));
+  root.appendChild(tx('text', {
+    class: 'root-label', x: CX, y: ROOT_Y - 9,
+    'text-anchor': 'middle', 'font-size': '20px'
+  }, 'modelwright'));
+  root.appendChild(tx('text', {
+    class: 'root-sub', x: CX, y: ROOT_Y + 14,
+    'text-anchor': 'middle', 'font-size': '12.5px'
+  }, '会自我证伪的建模助手'));
+  root.appendChild(tx('text', {
+    class: 'root-sub', x: CX, y: ROOT_Y + 28,
+    'text-anchor': 'middle', 'font-size': '11px', opacity: '.72'
+  }, 'protocols + ledger'));
+  svg.appendChild(root);
+
+  document.getElementById('mindmap').appendChild(svg);
+})();
+
+/* ============ 复制按钮 ============ */
+document.querySelectorAll('.copy').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const box = btn.parentElement;
+    const clone = box.cloneNode(true);
+    const c = clone.querySelector('.copy');
+    if (c) c.remove();
+    const text = clone.textContent.replace(/^\s+|\s+$/g, '');
+    try {
+      await navigator.clipboard.writeText(text);
+      btn.textContent = '已复制';
+    } catch (e) {
+      const r = document.createRange();
+      r.selectNodeContents(box);
+      const s = window.getSelection();
+      s.removeAllRanges(); s.addRange(r);
+      btn.textContent = '已选中，按 ⌘C';
+    }
+    setTimeout(() => { btn.textContent = '复制'; }, 1600);
+  });
+});
+</script>
+</body>
+</html>

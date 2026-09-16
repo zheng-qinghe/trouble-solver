@@ -1,5 +1,5 @@
 {
-  "note": "冻结的关键数字（golden file）。改模型/改参数后 mm audit 会在此报警，逼人显式确认漂移，而不是让数字悄悄变掉。",
+  "note": "冻结的关键数字 + 台账状态 + **检查结论**（golden file）。改模型/改参数后 mm audit 会逐项报警，逼人显式确认漂移，而不是让数字悄悄变掉。",
   "tolerance": {
     "default": 1e-09
   },
@@ -29,6 +29,7 @@
     "P3_continuous.profit_band_0p1pct.0": 132,
     "P3_continuous.profit_band_0p1pct.1": 135,
     "P5_counterexample.flip_point": 0.25,
+    "P5_counterexample.flip_boundary_cont": 0.2198067632848506,
     "P5_counterexample.scan.0.Q_opt": 133,
     "P5_counterexample.scan.3.Q_opt": 141,
     "P5_counterexample.scan.4.Q_opt": 152,
@@ -55,5 +56,20 @@
     "C-007": "verified",
     "C-008": "refuted",
     "C-009": "verified"
+  },
+  "check_verdicts": {
+    "C-001/P6": true,
+    "C-001/P1": true,
+    "C-002/P1": true,
+    "C-003/P1": true,
+    "C-003/P4": true,
+    "C-004/P1": true,
+    "C-004/P3": true,
+    "C-005/P5": true,
+    "C-006/P6": true,
+    "C-007/P1": true,
+    "C-007/P3": true,
+    "C-007/P5": true,
+    "C-009/P5": true
   }
 }

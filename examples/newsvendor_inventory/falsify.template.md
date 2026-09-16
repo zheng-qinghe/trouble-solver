@@ -60,8 +60,8 @@
 | {{m.P5_counterexample.scan.5.promo_prob|.0%}} | {{m.P5_counterexample.scan.5.Q_opt}} | +{{m.P5_counterexample.scan.5.Q_opt_vs_baseline}} |
 
 **反例（结论翻转）**：
-现状基线"均值 × 1.2 = {{m.baseline.Q}} 件"在促销概率低于 {{m.P5_counterexample.flip_point|.0%}} 时**偏保守**（备多了），
-一旦促销概率达到 {{m.P5_counterexample.flip_point|.0%}} 就转为**偏激进**（备少了），
+现状基线"均值 × 1.2 = {{m.baseline.Q}} 件"在促销概率低于 {{m.P5_counterexample.flip_boundary_cont|.2%}} 时**偏保守**（备多了），
+一旦促销概率达到 {{m.P5_counterexample.flip_boundary_cont|.2%}} 就转为**偏激进**（备少了），
 涨到 {{m.P5_counterexample.scan.5.promo_prob|.0%}} 时最优备货量已跳到 {{m.P5_counterexample.scan.5.Q_opt}} 件。
 → **同一个基线，在对促销频率的两种假设下，对错完全相反。**
 
@@ -91,7 +91,7 @@
 
 ## 失效边界（已同步进交付报告第四节）
 
-1. 促销概率 ≥ {{m.P5_counterexample.flip_point|.0%}} → 推荐值 {{m.result.recommend_Q}} 件失效；
+1. 促销概率 ≥ {{m.P5_counterexample.flip_boundary_cont|.2%}} → 推荐值 {{m.result.recommend_Q}} 件失效；
 2. 需求数据为截尾的实际售出量 → 真实最优备货量应略大于 {{m.result.recommend_Q}} 件（方向确定、幅度未知）；
 3. 单周期模型，不含跨周结转与需求趋势；
 4. 结论依附于口径B（L = {{m.params.L_caliberB}} 元/件），口径A 下最优值是 {{m.P6_caliber.Q_caliberA_L0}} 件；

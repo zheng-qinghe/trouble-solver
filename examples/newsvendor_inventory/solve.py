@@ -12,6 +12,7 @@ import json
 import math
 import os
 import statistics as st
+from functools import lru_cache
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out")
@@ -26,6 +27,7 @@ Q_MAX = 500         # 供应商周产能（硬约束，charter §4）
 
 
 # ============ 数据 ============
+@lru_cache(maxsize=1)          # 检查器会反复调用目标函数，数据只读一次
 def load_demand():
     with open(os.path.join(HERE, "data", "demand.csv"), encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
@@ -97,6 +99,59 @@ def mixture_demands(demands, promo_prob, promo_mult=3.1, seed=7):
     return out
 
 
+# ============ P5 精修：连续翻转边界 ============
+def mix_quantile(promo_prob, level, normal, promo):
+    """促销混合分布的**精确**分位数：对加权 CDF 做反演（不抽样，所以是连续可微的）。
+
+    与上面 P5 的"6 档离散扫描"是两套口径：
+      · 离散档位回答"哪个扫描档位上翻了"（工程上够用，但答案被档位宽度锁死）；
+      · 本函数回答"翻转点到底在哪"（连续），才配写进"失效边界"。
+    **两者口径不同，不得互相替代或相减。**
+    """
+    import bisect
+    ns, ps = sorted(normal), sorted(promo)
+    lo, hi = min(ns[0], ps[0]), max(ns[-1], ps[-1])
+
+    def cdf(x):
+        return ((1 - promo_prob) * bisect.bisect_right(ns, x) / len(ns)
+                + promo_prob * bisect.bisect_right(ps, x) / len(ps))
+
+    for _ in range(80):
+        mid = (lo + hi) / 2
+        if cdf(mid) < level:
+            lo = mid
+        else:
+            hi = mid
+    return (lo + hi) / 2
+
+
+def flip_boundary(demands, q0, L=L_STOCKOUT, lo=0.0, hi=0.6):
+    """二分找"基线偏保守 → 偏激进"的连续翻转边界。
+
+    判据函数 g(p) = 该促销概率下的最优订货量 − 基线订货量；
+    g 关于 p 单调增，故可在 [lo, hi] 上二分。
+    """
+    normal = [d for d in demands if d < 250]          # 常态周
+    promo = [min(1200.0, d * 3.1) for d in normal]    # 促销档（与 solve 主流程同构）
+    level = fractile(L)
+
+    def g(p):
+        return mix_quantile(p, level, normal, promo) - q0
+
+    if g(lo) * g(hi) > 0:
+        return None
+    a, b = lo, hi
+    for _ in range(120):
+        m = (a + b) / 2
+        if g(a) * g(m) <= 0:
+            b = m
+        else:
+            a = m
+        if b - a < 1e-12:
+            break
+    return (a + b) / 2
+
+
 def main():
     demands, is_promo = load_demand()
     n = len(demands)
@@ -150,11 +205,14 @@ def main():
         scan.append({"promo_prob": pi, "Q_opt": q_opt,
                      "Q_opt_vs_baseline": q_opt - q0})
     flip = next((s["promo_prob"] for s in scan if s["Q_opt_vs_baseline"] > 0), None)
+    fb = flip_boundary(demands, q0, L_STOCKOUT)
     m["P5_counterexample"] = {
         "scan": scan,
-        "flip_point": flip,
+        "flip_point": flip,                 # 离散档口径：哪个扫描档位上翻了
+        "flip_boundary_cont": fb,           # 连续口径：翻转点到底在哪（P5 精修）
         "reading": ("促销概率低于 %s 时，基线（均值×1.2）偏保守；高于它则偏激进——"
-                    "基线的对错完全取决于促销是否会发生" % (flip if flip else "—")),
+                    "基线的对错完全取决于促销是否会发生"
+                    % ("%.4f" % fb if fb is not None else "—")),
     }
 
     # ---- P6 口径对照：缺货惩罚怎么算，直接改变最优解 ----

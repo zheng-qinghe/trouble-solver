@@ -185,6 +185,7 @@
       <a href="#protocols">七条协议</a>
       <a href="#ledger">台账</a>
       <a href="#noguess">数字零手写</a>
+      <a href="#general">泛化</a>
       <a href="#proof">防护实测</a>
       <a href="#not">它不做什么</a>
       <a href="#roadmap">进度</a>
@@ -217,9 +218,9 @@
       和<b>可追溯台账</b>（把"可信度"变成可查询的字段）。
     </p>
     <div class="stats">
-      <div class="stat b"><b>7 条</b><span>验证协议，带判据、可自动跑</span></div>
-      <div class="stat t"><b>2 个</b><span>人工卡点，其余全自动</span></div>
-      <div class="stat o"><b>19 项</b><span>测试，其中 5 项是"防护真的会拦"</span></div>
+      <div class="stat b"><b>7 条</b><span>验证协议，已是可执行检查器</span></div>
+      <div class="stat t"><b>2 个</b><span>异构案例，引擎零改动（库存随机 / 几何断言）</span></div>
+      <div class="stat o"><b>41 项</b><span>测试，含一组"故意做错看会不会放过去"的负例</span></div>
       <div class="stat v"><b>100%</b><span>交付数字来自脚本，零手写</span></div>
     </div>
   </div>
@@ -518,13 +519,84 @@ mm ledger check mycase/ledger.json    # 只查台账（快）</div>
   </div>
 </section>
 
+<!-- ===================== 泛化 ===================== -->
+<section id="general">
+  <div class="wrap">
+    <p class="kicker">泛化</p>
+    <h2>引擎不认识你的领域，只认识"结论类型"</h2>
+    <p class="lead">这是它敢说"能解决各种各样的难题"的全部底气：协议不是写在提示词里给人看的文字，
+    而是<b>能跑的检查器</b>。引擎只认结论类型——等式、极值、全称断言、最优性——
+    而"<b>这类结论该怎么验</b>"这件事与领域无关。把它结构化，泛化就成立了。</p>
+
+    <div class="tbl-scroll" style="margin-top:22px">
+      <table>
+        <thead><tr><th>结论类型</th><th>必跑</th><th>它防的是什么</th></tr></thead>
+        <tbody>
+          <tr><td><b>等式</b></td><td class="mono">P1</td><td>单条推导写错 → 双路径交叉</td></tr>
+          <tr><td><b>极值</b></td><td class="mono">P1 + P3</td><td>极值在窄峰上，网格取不到 → 连续复核报区间</td></tr>
+          <tr><td><b>全称断言</b></td><td class="mono">P2 + P5</td><td><b>粗采样整段跳过窄违例带</b> → 对抗搜索 + 翻转边界</td></tr>
+          <tr><td><b>覆盖</b></td><td class="mono">P2 + P3 + P5</td><td>同上，且最坏点常落在边界上</td></tr>
+          <tr><td><b>最优性</b></td><td class="mono">P1 + P3 + P5</td><td>局部最优冒充全局最优</td></tr>
+          <tr><td><b>稳健性</b></td><td class="mono">P5</td><td>扰动下结论翻转而没人知道</td></tr>
+          <tr><td><b>统计量</b></td><td class="mono">P6</td><td>口径混用（数字可复算由 P7 兜底）</td></tr>
+          <tr><td><b>极限</b></td><td class="mono">P4</td><td>收敛了，但不退化到已知结果</td></tr>
+          <tr><td><b>口径相关</b></td><td class="mono">P6</td><td>不同口径的数字被直接相减</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cols2" style="margin-top:20px">
+      <div class="card">
+        <h3>加一个全新领域的难题：三步</h3>
+        <div class="codeblock" style="font-size:12.4px">mm charter new  mycase/charter.md   # 1 填 12 节（卡点①）
+# 2 写两个文件：
+#    solve.py   数字只出口到 out/metrics.json
+#    verify.py  把"可检查的对象"暴露成钩子
+#      def cover_margin(x):
+#          return nearest_gap(x, stations) - R
+# 3 声明每条结论的类型与要跑的检查：
+#    ledger.spec.json
+#      { "kind": "全称断言",
+#        "checks": [{"protocol":"P2",
+#                    "fn":"cover_margin",
+#                    "lo":0,"hi":2000,"base_n":51}] }
+mm solve mycase                     # 引擎自动跑检查、填台账、渲染报告
+mm audit mycase                     # 临时目录重跑 + 逐数字/逐检查对账</div>
+      </div>
+      <div class="card">
+        <h3>证据：两个不同族的案例，同一个引擎</h3>
+        <div class="tbl-scroll">
+          <table style="font-size:13.6px">
+            <thead><tr><th></th><th>案例 A</th><th>案例 B</th></tr></thead>
+            <tbody>
+              <tr><td>数学族</td><td>随机优化<br><span class="muted">期望值 · 离散决策</span></td><td>几何 / 全称断言<br><span class="muted">连续 · ∀ 量词</span></td></tr>
+              <tr><td>结论类型</td><td>统计量·等式·极值<br>稳健性·口径相关</td><td>全称断言·极值·覆盖<br>稳健性·极限</td></tr>
+              <tr><td>P2 触发</td><td>未触发（无全称断言）</td><td><b style="color:var(--orange)">触发，且自动认出窄带陷阱</b></td></tr>
+              <tr><td>台账</td><td>9 条（8 证 + 1 证伪留痕）</td><td>7 条（6 证 + 1 证伪留痕）</td></tr>
+              <tr><td>引擎改动</td><td colspan="2" style="text-align:center"><b>零</b></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:18px">
+      <b>诚实边界（不能泛化的部分必须说清楚）：</b>
+      ① <b>怎么建模</b>穷举不了——那是方法论与创造力的活，工具只做它的对偶问题"怎么知道它是对的"；
+      ② <b>钩子要有人写</b>——把可检查的对象暴露出来仍需理解问题的人动一次手，只能做到又小又规范；
+      ③ <b>搜索无法保证找到任意窄的特征</b>——所以 P2 每次都把搜索分辨率一起报出来，
+      把"未找到"读作"在该分辨率下未找到"，绝不写成"已证明成立"。
+    </div>
+  </div>
+</section>
+
 <!-- ===================== 防护实测 ===================== -->
 <section id="proof">
   <div class="wrap">
     <p class="kicker">防护实测</p>
     <h2>不是"设计了防护"，是"防护真的会拦"</h2>
-    <p class="lead">测试里专门留了 5 项负例——故意把事情做错，看工具会不会放过去。
-    下面三个是真实输出。</p>
+    <p class="lead">测试里专门留了一组负例——故意把事情做错，看工具会不会放过去。
+    下面四个是真实输出（前三个同一领域，第四个换个领域）。</p>
 
     <div style="margin-top:22px;display:grid;gap:16px">
       <div class="card">
@@ -561,8 +633,20 @@ mm ledger check mycase/ledger.json    # 只查台账（快）</div>
       </div>
     </div>
 
+      <div class="card">
+        <h3>④ 换一个领域，它自己抓到了真反例（案例 B）</h3>
+        <p class="muted" style="margin:0 0 10px">管廊覆盖案例里有一条断言：「实测半径下现状布点仍覆盖全长」。
+        51 点均匀网格（步长 40 m）判它<b>成立</b>；引擎的对抗搜索在 x=833.333 m 处找到了约 7 cm 宽的缺口，
+        并当场把"网格在骗人"这件事写进结论。</p>
+        <div class="term"><span class="c">$ mm solve examples/sensor_coverage</span>
+<span class="w">【阶段 3 证伪】自动执行检查 12 条：通过 11，不通过 1</span>
+  <span class="r">⚠️ [P2] 实测半径下的覆盖断言：不通过</span>
+     网格(51 点/步长 40) 最坏裕度 -6.600e+00 → 对抗搜索最坏裕度 6.667e-02 @ x=833.333
+     ⇒ 断言被证伪；<span class="y">⚠️ 网格给出的是假结论（窄带陷阱：真反例落在网格点之间）</span></div>
+      </div>
+
     <div class="note green" style="margin-top:18px">
-      另外 14 项常规测试覆盖：空白《问题说明书》必须判不通过、<code>【未知】</code>项没有处理计划必须拦、
+      再加上一组常规测试覆盖：空白《问题说明书》必须判不通过、<code>【未知】</code>项没有处理计划必须拦、
       标 verified 却没证据 / 没重算命令 / 没口径定义必须拦、引用已证伪条目必须拦、
       <code>refuted</code> 条目本身<b>不报错</b>（它是留痕不是错误）、依赖链 stale 传播不影响无关条目。
     </div>
@@ -617,8 +701,8 @@ mm ledger check mycase/ledger.json    # 只查台账（快）</div>
         <tbody>
           <tr><td class="mono">W1</td><td>骨架 + 三阶段 + 台账 + 卡点校验 + 一个业务案例跑通全闭环 + 独立复核</td>
               <td><b style="color:var(--green)">已完成</b>（可运行、19 项测试通过）</td></tr>
-          <tr><td class="mono">W2</td><td>七条协议插件化（<code>protocols/p1..p7.py</code>）+ 把真实竞赛案例脱敏成第二个回归案例</td>
-              <td style="color:var(--muted)">待启动</td></tr>
+          <tr><td class="mono">W2</td><td>协议引擎化（<code>checks.py</code> 七条可执行检查器）+ 结论类型→必跑协议矩阵 + 第二个异构案例（几何/全称断言族）+ 检查结论纳入 golden 回归</td>
+              <td><b style="color:var(--green)">已完成</b>（41 项测试通过）</td></tr>
           <tr><td class="mono">W3</td><td>报告 / 图表 / 合规产出模块（600 dpi、禁彩色文字、缺字形检测、身份脱敏自检）</td>
               <td style="color:var(--muted)">规划中</td></tr>
           <tr><td class="mono">W4</td><td>README 打磨 + 技术文章 + 发布 v0.1</td>
@@ -633,11 +717,12 @@ mm ledger check mycase/ledger.json    # 只查台账（快）</div>
 ├── src/mm/
 │   ├── cli.py          命令入口：charter / ledger / solve / audit
 │   ├── charter.py      问题说明书 12 节机器校验（卡点①）
+│   ├── checks.py       ★ 可执行检查器 + 结论类型→必跑协议矩阵（泛化核心）
 │   ├── ledger.py       台账状态机 + stale 依赖传播 + 交付前对账
 │   ├── case.py         案例编排：solve 与 audit
 │   └── report.py       模板渲染：数字只能从 metrics.json 注入
 ├── examples/newsvendor_inventory/    业务案例（单 SKU 备货，报童模型）
-├── tests/              19 项，含 5 项负例（"防护真的会拦"）
+├── tests/              41 项，含一组负例（"故意做错看会不会放过去"）
 ├── docs/               协议详解 · 台账详解 · 本发布页
 └── LICENSE             Apache-2.0</div>
   </div>
@@ -677,14 +762,16 @@ const MIND = [
     '✗ 无多智能体角色扮演',
     '✗ 无数据库 / 服务端'
   ]},
-  { side:'right', color:'#1d4ed8', title:'七条验证协议', anchor:'#protocols', items:[
+  { side:'right', color:'#1d4ed8', title:'协议与泛化', anchor:'#protocols', items:[
     'P1 双路径交叉｜相对误差 < 1e-9',
-    'P2 细步重扫｜≥10× + 最坏构型',
+    'P2 全称断言审计｜对抗搜索抓窄带陷阱',
     'P3 连续复核｜报区间不报单点',
     'P4 极限与量纲｜退化到已知结果',
     'P5 反例搜索｜找结论翻转边界',
     'P6 口径声明｜定义/边界/可外推',
-    'P7 台账对账｜禁止手抄数字'
+    'P7 台账对账｜禁止手抄数字',
+    '结论类型 → 必跑检查矩阵',
+    '加新领域：引擎零改动'
   ]},
   { side:'right', color:'#6d28d9', title:'工作流与卡点', anchor:'#start', items:[
     '卡点① 口径确认（机器校验）',

@@ -52,15 +52,37 @@ P2 / P3 / P5 是"**主动找自己错**"，与只查格式的传统 QA 不是一
 报告与证伪记录里的每个数字都写成 `{{m.路径}}` 占位符，从 `out/metrics.json` 注入，
 **取不到值就直接构建失败**——不给"手抄一个数字"留后路。
 
+### 泛化：引擎不认识你的领域
+
+协议不是写在提示词里给人看的文字，而是**能跑的检查器**（`src/mm/checks.py`）。
+引擎只认识**结论类型**（等式 / 极值 / 全称断言 / 最优性 / 口径相关 / …），
+不认识库存、管廊、促销、探测半径。每条结论声明自己的类型，引擎据此**强制跑齐**该类型该跑的协议：
+
+```jsonc
+{ "kind": "全称断言",                                  // ← 类型决定必跑 P2+P5
+  "checks": [{"protocol": "P2", "fn": "cover_margin_aged",
+              "lo": 0, "hi": 2000, "base_n": 51}] }    // ← fn 是案例 verify.py 里的钩子
+```
+
+于是加一个**全新领域**的难题只要三步：
+写 `charter.md`（问题说明书）→ 写 `solve.py` + `verify.py`（钩子）→ 声明 `kind`/`checks`。
+**引擎一行都不用改。** 台账里的 `protocols` 也不再手写，它由"实际跑过且通过"的检查决定。
+
+→ 详见 [`docs/generalization.md`](docs/generalization.md)（含"能泛化什么 / 不能泛化什么"的诚实边界）。
+
 ## 30 秒上手
 
 ```bash
-# 跑通一个完整案例（业务型：单 SKU 每周备货量）
+# 案例 A：库存随机优化族（单 SKU 每周备货量决策）
 PYTHONPATH=src python3 -m mm.cli solve examples/newsvendor_inventory
 PYTHONPATH=src python3 -m mm.cli audit examples/newsvendor_inventory
 
+# 案例 B：几何 / 全称断言族（2 km 管廊传感器布点覆盖）——同一引擎，零改动
+PYTHONPATH=src python3 -m mm.cli solve examples/sensor_coverage
+PYTHONPATH=src python3 -m mm.cli audit examples/sensor_coverage
+
 # 看台账
-PYTHONPATH=src python3 -m mm.cli ledger show examples/newsvendor_inventory/ledger.json
+PYTHONPATH=src python3 -m mm.cli ledger show examples/sensor_coverage/ledger.json
 ```
 
 实际输出（节选）：
@@ -75,7 +97,7 @@ PYTHONPATH=src python3 -m mm.cli ledger show examples/newsvendor_inventory/ledge
 闭环通过：报告/证伪记录里的每个数字都来自 out/metrics.json（P7）
 ```
 
-`mm audit` 会在**临时目录**里独立重跑一遍求解脚本，再把 40 个冻结数字逐个比对，
+`mm audit` 会在**临时目录**里独立重跑一遍求解脚本，再把冻结的数字与检查结论逐个比对，
 并检查结论状态有没有偷偷漂移。改一个参数试试——它会立刻拦住你：
 
 ```
@@ -95,11 +117,14 @@ modelwright/
 │   ├── cli.py                  mm charter / ledger / solve / audit
 │   ├── charter.py              问题说明书完整性校验（卡点①）
 │   ├── ledger.py               台账状态机 + 交付前对账（P7）
+│   ├── checks.py               ★ 可执行检查器 + 结论类型→必跑协议矩阵（泛化的核心）
 │   ├── case.py                 案例编排：闭环与独立复核
 │   └── report.py               模板渲染：数字只能来自 metrics.json
-├── examples/newsvendor_inventory/   业务型案例（完整闭环，作为回归测试）
-├── tests/                      把"防护真的会拦"当成测试来跑（19 项）
-└── docs/{methods.md,ledger.md}
+├── examples/
+│   ├── newsvendor_inventory/   案例 A：库存随机优化族（9 条台账）
+│   └── sensor_coverage/        案例 B：几何 / 全称断言族（7 条台账，自动抓到窄带陷阱）
+├── tests/                      41 项：把"防护真的会拦"当成测试来跑
+└── docs/{methods.md,ledger.md,generalization.md}
 ```
 
 ### 一个案例 = 一个目录
@@ -107,7 +132,8 @@ modelwright/
 ```
 charter.md          问题说明书（12 节，机器校验；卡点① 凭据）
 solve.py            求解脚本，唯一数字出口 out/metrics.json
-ledger.spec.json    结论清单（声明式，claim 里用 {{m.路径}} 引用真实数字）
+verify.py           ★ 验证钩子：把"可检查的对象"暴露给通用检查器
+ledger.spec.json    结论清单（声明式：kind 结论类型 + checks 要跑的检查 + {{m.路径}} 引用数字）
 report.template.md  报告模板（禁止手写数字）
 falsify.template.md 证伪记录模板
 expected.json       冻结数字（golden file），供 mm audit 回归
@@ -118,14 +144,14 @@ out/                脚本产出，不入库
 
 | 版本 | 内容 | 状态 |
 |---|---|---|
-| v0.1 | 骨架 + 三阶段 + 台账 + 一个业务案例跑通全闭环 + 独立复核 | **已完成**（可运行、19 项测试通过） |
-| v0.2 | 七条协议插件化（`protocols/`）+ 第二个案例（脱敏真实无线电定位）+ 协议自动跑 | 计划中 |
+| v0.1 | 骨架 + 三阶段 + 台账 + 一个案例跑通全闭环 + 独立复核 | **已完成** |
+| v0.2 | **协议引擎化**（`checks.py`：七条可执行检查器）+ **结论类型→必跑协议矩阵** + 第二个异构案例 + 检查结论纳入 golden 回归 | **已完成**（41 项测试通过） |
 | v0.3 | 报告/图表产出模块（600dpi、禁用彩色文字、缺字形检测）+ 竞赛合规模式 | 计划中 |
 | v0.4 | README 打磨 + 技术文章 + 首个公开发布 | 计划中 |
 
-**当前边界（自行判断能不能用）**：v0.1 是**确定性闭环**——案例的求解脚本由人/agent 写好，
-工具负责卡点、台账、数字对账与复核；`prompts/` 里的阶段指令目前是交给 agent 执行的，
-还没有内置的 LLM 编排。换句话说：**现在它保证"交付物不可作弊"，还不保证"模型自动想得对"。**
+**当前边界（自行判断能不能用）**：它是**确定性闭环**——案例的求解脚本与验证钩子由人/agent 写好，
+工具负责卡点、自动跑协议、台账、数字对账与复核。`prompts/` 里的阶段指令目前是交给 agent 执行的，
+还没有内置的 LLM 编排。换句话说：**它保证"交付物不可作弊"，还不保证"模型自动想得对"。**
 
 ## 设计取舍（为什么这么"小"）
 

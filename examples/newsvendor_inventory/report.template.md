@@ -18,7 +18,7 @@
 提升到 {{m.P1_dual_path.profit_pathB|.2f}} 元，**每周多 {{m.result.gain_vs_baseline_per_week|.2f}} 元（+{{m.result.gain_vs_baseline_pct|.1f}}%）**，年化约 {{m.result.gain_vs_baseline_annual|.0f}} 元。
 
 > 这不是"最优值"，而是**在明确口径下的最优解 + 已知失效边界**（见第四节）。
-> 若促销概率上升到 {{m.P5_counterexample.flip_point|.0%}} 以上，本推荐值失效，须改用更大的备货量。
+> 若促销概率上升到 {{m.P5_counterexample.flip_boundary_cont|.2%}} 以上，本推荐值失效，须改用更大的备货量。
 
 ## 二、基线对照
 
@@ -42,13 +42,13 @@
 | P2 细步重扫 | "恒成立"类断言必须 ≥10× 细化重扫 | **本例未触发**：产出中不含"恒/一定/总是"类断言（触发条件与记录格式见 `falsify.md`） | 不适用 |
 | P3 连续复核 | 离散极值须用连续/自适应复核，报区间 | 离散峰值 Q={{m.P3_continuous.Q_discrete_opt}}；连续分位数 {{m.P3_continuous.Q_continuous_quantile|.2f}}；0.1% 平台 = [{{m.P3_continuous.profit_band_0p1pct.0}}, {{m.P3_continuous.profit_band_0p1pct.1}}] | 通过（报区间） |
 | P4 极限与量纲 | 参数取极限须退化为已知结果 | 缺货惩罚 → 0 时临界分位数退化为经典报童比 {{m.P1_dual_path.critical_fractile_caliberA|.4f}} | 通过（另一条极限未覆盖，见 `falsify.md`） |
-| P5 反例搜索 | 主动搜使结论翻转的参数区域 | 促销概率 ≥ {{m.P5_counterexample.flip_point|.0%}} 时基线由偏保守转为偏激进；推荐值在该区间失效 | 通过（1 条反例） |
+| P5 反例搜索 | 主动搜使结论翻转的参数区域 | 促销概率 ≥ {{m.P5_counterexample.flip_boundary_cont|.2%}} 时基线由偏保守转为偏激进；推荐值在该区间失效 | 通过（1 条反例） |
 | P6 口径声明 | 每个数字标来源/定义/边界/可外推 | 见 §二 口径警告与台账 `caliber` 字段 | 通过 |
 | P7 台账对账 | 每个对外数字可由一条命令重算 | 本报告数字全部由占位符注入；`mm audit` 独立重跑逐项比对 | 通过 |
 
 ## 四、局限与失效边界（**必读**）
 
-1. **促销概率 ≥ {{m.P5_counterexample.flip_point|.0%}} 即失效**：本推荐值 {{m.result.recommend_Q}} 件只在该点以下成立；
+1. **促销概率 ≥ {{m.P5_counterexample.flip_boundary_cont|.2%}} 即失效**：本推荐值 {{m.result.recommend_Q}} 件只在该点以下成立；
    到该档位最优解已是 {{m.P5_counterexample.scan.4.Q_opt}} 件，促销概率 {{m.P5_counterexample.scan.5.promo_prob|.0%}} 时更达 {{m.P5_counterexample.scan.5.Q_opt}} 件。
    **促销排期一变，结论就要重算。**
 2. **数据截尾偏差**：需求用"实际售出量"，缺货周的未满足需求未计入 → 均值系统性低估，真实最优备货量应略大于 {{m.result.recommend_Q}}。

@@ -1,0 +1,142 @@
+{
+  "case": "newsvendor_inventory",
+  "note": "结论清单（声明式）。claim 里的 {{m.路径}} 在 mm solve 时被钉成 out/metrics.json 里的真实数字；取不到就报错，禁止手抄。",
+  "claims": [
+    {
+      "id": "C-001",
+      "claim": "样本 52 周实际售出量均值 {{m.mean|.1f}} 件、中位 {{m.median|.1f}} 件、最大 {{m.max|.0f}} 件，含 {{m.n_promo_weeks}} 个促销周",
+      "status": "verified",
+      "method": "对 data/demand.csv 全样本直接统计",
+      "protocols": ["P7"],
+      "caliber": {
+        "定义": "均值 = 52 周实际售出量的算术平均",
+        "适用边界": "口径为实际售出量，已截尾（缺货周的未满足需求未计入）；促销频率变化时该统计量不可外推",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": []
+    },
+    {
+      "id": "C-002",
+      "claim": "现状基线（均值 × 1.2）为 Q0 = {{m.baseline.Q}} 件/周，周期望利润 {{m.baseline.profit_caliberB|.2f}} 元（口径B）",
+      "status": "verified",
+      "method": "对 52 周样本遍历 Q 计算期望利润，取现状经验值 Q0",
+      "protocols": ["P7"],
+      "caliber": {
+        "定义": "周期望利润 = 售出收入 + 滞销残值 − 进货成本 − 缺货惩罚，按 52 周等权平均",
+        "适用边界": "单周期模型，无跨周结转；Q0 是经验值而非最优值",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": ["C-001"]
+    },
+    {
+      "id": "C-003",
+      "claim": "双路径交叉：临界分位数法给出 Q = {{m.P1_dual_path.Q_pathA_fractile}}，独立数值枚举给出 Q = {{m.P1_dual_path.Q_pathB_numeric}}，两路利润相对差 {{m.P1_dual_path.rel_diff_profit|.2e}}",
+      "status": "verified",
+      "method": "路径A：临界分位数公式（解析）；路径B：对 Q ∈ [0,500] 逐点枚举求最大期望利润（独立实现）",
+      "protocols": ["P1"],
+      "caliber": {
+        "定义": "临界分位数 = (售价 − 进价 + 缺货惩罚) / (售价 − 残值 + 缺货惩罚)",
+        "适用边界": "仅在单周期、需求独立同分布下成立；经验分位数用线性插值连续化",
+        "可外推": true
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": ["C-001"]
+    },
+    {
+      "id": "C-004",
+      "claim": "最优备货量不是单点：0.1% 利润平台区间为 [{{m.P3_continuous.profit_band_0p1pct.0}}, {{m.P3_continuous.profit_band_0p1pct.1}}] 件，连续分位数 {{m.P3_continuous.Q_continuous_quantile|.2f}}",
+      "status": "verified",
+      "method": "离散枚举得峰值 Q={{m.P3_continuous.Q_discrete_opt}}；再用连续插值分位数复核，并扫描利润不低于峰值 99.9% 的全部 Q",
+      "protocols": ["P3"],
+      "caliber": {
+        "定义": "0.1% 平台 = 期望利润 ≥ 峰值 × (1 − 0.001) 的所有 Q 组成的区间",
+        "适用边界": "平台宽度随样本量增大而收窄；样本 ≤ 200 周时应报区间而非单点",
+        "可外推": true
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": ["C-003"]
+    },
+    {
+      "id": "C-005",
+      "claim": "反例搜索：促销概率升到 {{m.P5_counterexample.flip_point}} 时结论翻转——最优备货量从低于基线转为高于基线（促销概率 {{m.P5_counterexample.scan.5.promo_prob}} 时最优 {{m.P5_counterexample.scan.5.Q_opt}} 件）",
+      "status": "verified",
+      "method": "把「促销周会发生」显式建成混合分布（促销档 ×3.1），扫描促销概率 2%~40%，重算最优 Q",
+      "protocols": ["P5"],
+      "caliber": {
+        "定义": "翻转点 = 使「最优 Q > 现状基线 Q0」成立的最小扫描促销概率",
+        "适用边界": "促销倍数固定为 3.1 倍、扫描为 6 个离散档位，真实翻转点落在相邻档之间",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": ["C-002"]
+    },
+    {
+      "id": "C-006",
+      "claim": "口径混用代价：按口径A（L=0）备货 {{m.P6_caliber.Q_caliberA_L0}} 件、而真实成本结构是口径B（L=8）时，每周期望利润损失 {{m.P6_caliber.weekly_loss_if_use_A_but_true_is_B|.2f}} 元，年化 {{m.P6_caliber.annual_loss_if_use_A_but_true_is_B|.0f}} 元",
+      "status": "verified",
+      "method": "分别在两种缺货惩罚下求最优 Q，再把两个解放到同一口径（口径B）下评估利润差",
+      "protocols": ["P6"],
+      "caliber": {
+        "定义": "损失 = 口径B 下最优解的期望利润 − 口径A 最优解在口径B 下的期望利润",
+        "适用边界": "只在「真实成本结构是口径B」的假设下成立；若真实是口径A 则损失记在另一边",
+        "可外推": true
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": ["C-002", "C-003"]
+    },
+    {
+      "id": "C-007",
+      "claim": "结论：建议每周备货 {{m.result.recommend_Q}} 件，相对现状基线每周期望利润增加 {{m.result.gain_vs_baseline_per_week|.2f}} 元（+{{m.result.gain_vs_baseline_pct|.1f}}%）",
+      "status": "verified",
+      "method": "取口径B 下期望利润最大者；增益 = 最优解利润 − 基线利润",
+      "protocols": ["P1", "P3"],
+      "caliber": {
+        "定义": "推荐值 = 口径B（缺货惩罚 8 元/件）下的期望利润最优解",
+        "适用边界": "促销概率 ≥ {{m.P5_counterexample.flip_point}} 时本推荐值失效，须改用 C-009 给出的更大备货量",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json", "report.md"],
+      "recompute": "python solve.py",
+      "depends_on": ["C-002", "C-003", "C-004", "C-006"]
+    },
+    {
+      "id": "C-008",
+      "claim": "（已证伪，留痕）「现状基线（均值 × 1.2）已接近最优、不需要建模」——基线在口径B 下的周期望利润比最优解低 {{m.result.gain_vs_baseline_per_week|.2f}} 元；且在促销概率 ≥ {{m.P5_counterexample.flip_point}} 时基线由偏保守转为偏激进",
+      "status": "refuted",
+      "status_note": "该断言在 P5 反例搜索下翻转，证据保留",
+      "method": "P5 反例搜索 + P1 双路径交叉",
+      "protocols": ["P1", "P5"],
+      "caliber": {
+        "定义": "「接近最优」的口径 = 与最优解周期望利润差 < 1%（约 10 元/周）",
+        "适用边界": "该断言已被证伪，任何交付物不得再引用",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": ["C-002", "C-005"]
+    },
+    {
+      "id": "C-009",
+      "claim": "失效边界：促销概率 ≥ {{m.P5_counterexample.flip_point}} 时，推荐值 {{m.result.recommend_Q}} 件低于最优解（该档最优 = {{m.P5_counterexample.scan.4.Q_opt}} 件），本模型的推荐在该区间内失效",
+      "status": "verified",
+      "method": "取 P5 扫描中越过翻转点的档位与对应最优解",
+      "protocols": ["P5", "P6"],
+      "caliber": {
+        "定义": "失效 = 推荐值不再是其自身假设下的最优解",
+        "适用边界": "仅覆盖扫描过的促销倍数（3.1 倍）；促销倍数本身变化时边界会移动",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json", "report.md"],
+      "recompute": "python solve.py",
+      "depends_on": ["C-005", "C-007"]
+    }
+  ]
+}

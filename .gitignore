@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# 案例的脚本产出：可再生成，不入库（要靠 expected.json 冻结数字，而不是靠产物文件）
+examples/*/out/
+
+.DS_Store
+.idea/
+.vscode/

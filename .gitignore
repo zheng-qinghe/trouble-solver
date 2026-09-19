@@ -9,6 +9,9 @@ venv/
 # 案例的脚本产出：可再生成，不入库（要靠 expected.json 冻结数字，而不是靠产物文件）
 examples/*/out/
 
+# 仓库根目录的脚本产出：同样是可再生成的垃圾（在 repo 根误跑 solve/agent 时会生成）
+/out/
+
 .DS_Store
 .idea/
 .vscode/

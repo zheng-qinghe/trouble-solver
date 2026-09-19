@@ -1,0 +1,106 @@
+{
+  "case": "fishery_msy",
+  "note": "案例：生物/资源族（连续优化 + 全称断言 + 口径相关）。kind 的组合（全称断言/最优性/口径相关/极限）与案例 A（统计量/等式/极值）、案例 B（全称断言/极值/覆盖/稳健性/口径/极限）、案例 C（全称断言/口径/极值）各不相同，但走的是同一张 REQUIRED_BY_KIND 表、同一套检查器。本案例的窄带陷阱成因是『局部额外死亡带』，与 B 的几何缺口、C 的统计越界带是三种不同机理。",
+  "claims": [
+    {
+      "id": "F-001",
+      "claim": "（已证伪，留痕）「有效口径下，∀E∈[0,300]，有效产卵生物量 ≥ B_MIN={{m.params.B_min|.0f}} 吨」——实际在 E≈{{m.pointwise.worst_margin_at|.2f}} 处降到 {{m.caliber.eff_at_spike|.1f}} 吨，最坏余量 {{m.pointwise.worst_margin|.2f}} 吨",
+      "status": "refuted",
+      "method": "P2 全称断言审计（对抗搜索）",
+      "checks": [
+        {"protocol": "P2", "name": "有效口径下的资源可续断言",
+         "fn": "stock_margin", "lo": 0, "hi": 300, "base_n": 51}
+      ],
+      "caliber": {
+        "定义": "可续 ⟺ 任意努力档位下有效产卵生物量 = 标称平衡生物量 − 局部额外死亡 ≥ 240 吨",
+        "适用边界": "该断言已被证伪，任何交付物不得再引用；违例带仅约 16 吨宽、卡在两网格点 180/186 之间，属典型窄带陷阱",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": []
+    },
+    {
+      "id": "F-002",
+      "kind": "全称断言",
+      "claim": "按标称口径（不计局部额外死亡）判定，∀E∈[0,300]，标称平衡生物量 ≥ B_MIN 成立，最坏余量 {{m.nominal.worst_margin|.2f}} 吨（即全程高于下限，但裕度很小、不具工程安全余量）",
+      "status": "verified",
+      "method": "P2 对抗搜索 + P5 翻转边界（确认无单调翻转）",
+      "checks": [
+        {"protocol": "P2", "name": "标称口径下的资源可续断言",
+         "fn": "nominal_stock_margin", "lo": 0, "hi": 300, "base_n": 51},
+        {"protocol": "P5", "name": "标称生物量的翻转边界",
+         "fn": "flip_nominal_stock", "lo": 0, "hi": 300}
+      ],
+      "caliber": {
+        "定义": "可续 ⟺ 标称平衡生物量 x*=K(1−qE/r) ≥ 240 吨",
+        "适用边界": "标称口径不含局部额外死亡，所以它在『有效口径失守的同一档位』仍显示安全——这正是口径混用的危险：按标称验收会漏掉真实失守",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": []
+    },
+    {
+      "id": "F-003",
+      "kind": "最优性",
+      "claim": "最大可持续产量 MSY = rK/4 = {{m.msy.y_max_analytic|.1f}} 吨/年，在努力度 E* = r/(2q) = {{m.msy.E_star_analytic|.1f}} 船·年处取得；两条独立算法相对差 {{m.msy.rel_diff|.2e}}",
+      "status": "verified",
+      "method": "路径A 闭式 rK/4；路径B [0, r/q] 细步扫描求最大；连续复核峰值位置；翻转边界确认 E*",
+      "checks": [
+        {"protocol": "P1", "name": "MSY：解析式 vs 细步扫描",
+         "fn": ["y_max_analytic", "y_max_numeric"], "rtol": 1e-9},
+        {"protocol": "P3", "name": "努力度连续复核（E* 是否真为全局最大）",
+         "fn": "neg_yield", "lo": 0, "hi": 400, "base_n": 401},
+        {"protocol": "P5", "name": "产量的翻转边界（零点即 E*）",
+         "fn": "flip_yield", "lo": 0, "hi": 400}
+      ],
+      "caliber": {
+        "定义": "MSY = 使产量 qEx* 最大的可持续捕捞量；E* 使 d(qEx*)/dE = 0",
+        "适用边界": "前提是 Schaefer 平衡式成立；局部额外死亡带不改变 MSY 的『产量最大』性质，但会改变『资源是否可续』——两者必须分开陈述",
+        "可外推": true
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": []
+    },
+    {
+      "id": "F-004",
+      "kind": "口径相关",
+      "claim": "口径决定结论：在 E={{m.params.E_spike|.0f}} 处，有效产卵生物量仅 {{m.caliber.eff_at_spike|.1f}} 吨，而标称平衡生物量为 {{m.caliber.nominal_at_spike|.1f}} 吨，二者相差 {{m.params.amp|.1f}} 吨（= 局部额外死亡带幅度）；两套口径禁止相减",
+      "status": "verified",
+      "method": "两套口径各自计算，并列报出（不做相减）",
+      "checks": [
+        {"protocol": "P6", "name": "并列数字是否各自带口径",
+         "fn": "caliber_eff_vs_nom", "allow_cross": true}
+      ],
+      "caliber": {
+        "定义": "有效口径 = 标称平衡生物量 − 局部额外死亡；标称口径 = Schaefer 平衡式，不计局部额外死亡",
+        "适用边界": "两套口径结果禁止相减或混排；资源评估按有效口径，产量优化按标称口径（两者结论方向可能相反）",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": []
+    },
+    {
+      "id": "F-005",
+      "kind": "极限",
+      "claim": "极限退化：努力度→0 时产量→{{m.limit.E0_yield|.1f}}；努力度→r/q=400 时生物量→{{m.limit.E400_x|.1f}}；努力度=E* 时产量恰为闭式最大值 {{m.msy.y_max_analytic|.1f}} 吨/年",
+      "status": "verified",
+      "method": "对参数 E 取极限，核对是否退化到可手工验算的值",
+      "checks": [
+        {"protocol": "P4", "name": "E 取极限时的退化检验",
+         "fn": "limit_samples", "tol": 1e-9}
+      ],
+      "caliber": {
+        "定义": "E→0：不捕捞则无产量；E→r/q：捕捞压力使平衡生物量坍塌为 0",
+        "适用边界": "公式在 qE≤r 时成立；qE>r 时生物量定义为 0（开放准入崩溃）",
+        "可外推": true
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": ["F-003"]
+    }
+  ]
+}

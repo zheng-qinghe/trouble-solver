@@ -1,4 +1,4 @@
-"""mm 的回归测试：把"防护真的会拦"当成测试来跑。
+"""TroubleSolver 的回归测试：把"防护真的会拦"当成测试来跑。
 
 运行： python -m unittest discover -s tests -v
 不需要安装：测试自己把 src/ 放进 sys.path。
@@ -15,10 +15,10 @@ import unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from mm import charter as ch          # noqa: E402
-from mm import report as rp           # noqa: E402
-from mm.case import Case              # noqa: E402
-from mm.ledger import Ledger          # noqa: E402
+from troublesolver import charter as ch          # noqa: E402
+from troublesolver import report as rp           # noqa: E402
+from troublesolver.case import Case              # noqa: E402
+from troublesolver.ledger import Ledger          # noqa: E402
 
 EXAMPLE = os.path.join(ROOT, "examples", "newsvendor_inventory")
 

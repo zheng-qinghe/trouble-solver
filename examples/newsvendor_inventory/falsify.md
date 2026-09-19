@@ -80,8 +80,8 @@
 ## P7 台账对账
 
 - 本文件与 `report.md` 中每个数字都是**占位符**（形如 `m.键路径`，两对大括号包起来），
-  由 `mm solve` 从 `out/metrics.json` 注入——本文件不含任何手写数字；
-- 重算命令：`python solve.py`；独立复核：`mm audit examples/newsvendor_inventory`（临时目录重跑 + 逐数字比对）；
+  由 `tsolve solve` 从 `out/metrics.json` 注入——本文件不含任何手写数字；
+- 重算命令：`python solve.py`；独立复核：`tsolve audit examples/newsvendor_inventory`（临时目录重跑 + 逐数字比对）；
 - 台账 `ledger.json` 中每一条 `verified` 都带 `recompute` 命令与证据文件，缺一即报错。
 
 ## 失效边界（已同步进交付报告第四节）

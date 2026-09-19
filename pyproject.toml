@@ -3,13 +3,13 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "modelwright"
-version = "0.1.0"
-description = "会自我证伪的建模助手：验证协议库 + 可追溯台账，交付物的每个数字都能被独立复算"
+name = "trouble-solver"
+version = "0.2.0"
+description = "TroubleSolver：会自我证伪的建模助手——验证协议库 + 可追溯台账，交付物的每个数字都能被独立复算"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "Apache-2.0" }
-keywords = ["modeling", "falsification", "verification", "ledger", "reproducibility"]
+keywords = ["modeling", "falsification", "verification", "ledger", "reproducibility", "troublesolver"]
 classifiers = [
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
@@ -18,7 +18,7 @@ classifiers = [
 dependencies = []
 
 [project.scripts]
-mm = "mm.cli:main"
+tsolve = "troublesolver.cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

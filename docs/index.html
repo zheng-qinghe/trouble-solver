@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>modelwright · 会自我证伪的建模助手</title>
-<meta name="description" content="modelwright 是一个会自我证伪的建模助手：七条验证协议 + 可追溯台账，交付物里的每个数字都能被独立复算，并主动报告结论的失效边界。">
+<title>TroubleSolver · 会自我证伪的建模助手</title>
+<meta name="description" content="TroubleSolver 是一个会自我证伪的建模助手：七条验证协议 + 可追溯台账，交付物里的每个数字都能被独立复算，并主动报告结论的失效边界。">
 <style>
   :root{
     --bg:#f5f7fa;
@@ -177,7 +177,7 @@
 
 <header class="nav">
   <div class="wrap">
-    <a class="brand" href="#top"><span class="dot"></span>modelwright</a>
+    <a class="brand" href="#top"><span class="dot"></span>TroubleSolver</a>
     <nav>
       <a href="#why">为什么做</a>
       <a href="#map">思维导图</a>
@@ -191,7 +191,7 @@
       <a href="#roadmap">进度</a>
     </nav>
     <span class="spacer"></span>
-    <span class="tag">v0.1 · Apache-2.0</span>
+    <span class="tag">v0.3 · Apache-2.0</span>
   </div>
 </header>
 
@@ -212,15 +212,15 @@
     每条结论都有状态、有证据、有一条能重算出它的命令。</p>
     <p class="lead">
       所有"AI 建模"工具都在解决<b>怎么写出来</b>（调 API 谁都会，这片是红海，
-      还跟学术诚信打架）。modelwright 解决的是另一个问题：
+      还跟学术诚信打架）。TroubleSolver 解决的是另一个问题：
       <b>怎么知道它是对的</b>。
       差异化不在生成能力，而在两样东西——<b>验证协议库</b>（主动去找自己的反例）
       和<b>可追溯台账</b>（把"可信度"变成可查询的字段）。
     </p>
     <div class="stats">
       <div class="stat b"><b>7 条</b><span>验证协议，已是可执行检查器</span></div>
-      <div class="stat t"><b>2 个</b><span>异构案例，引擎零改动（库存随机 / 几何断言）</span></div>
-      <div class="stat o"><b>41 项</b><span>测试，含一组"故意做错看会不会放过去"的负例</span></div>
+      <div class="stat t"><b>4 个</b><span>异构案例，引擎零改动（库存随机 / 设施覆盖 / 信贷风控 / 渔业资源）</span></div>
+      <div class="stat o"><b>53 项</b><span>测试，含一组"故意做错看会不会放过去"的负例</span></div>
       <div class="stat v"><b>100%</b><span>交付数字来自脚本，零手写</span></div>
     </div>
   </div>
@@ -259,7 +259,7 @@
 <section id="map">
   <div class="wrap">
     <p class="kicker">思维导图</p>
-    <h2>一张图看懂 modelwright</h2>
+    <h2>一张图看懂 TroubleSolver</h2>
     <p class="lead">中间是它要解决的问题，左右六条主干分别是：为什么做、怎么记账、什么不做，
     以及协议、流程、交付物。<b>点任意主干可跳到对应章节</b>，鼠标悬停会高亮该分支。</p>
     <div class="mapbox" style="margin-top:22px">
@@ -277,47 +277,48 @@
   <div class="wrap">
     <p class="kicker">快速开始</p>
     <h2>怎么用：一条命令跑通一个闭环</h2>
-    <p class="lead">不需要 API key，不需要数据库，不需要服务端。一个案例 = 一个文件夹，
-    状态全在文件里，看得见、改得动、能回滚。</p>
+    <p class="lead">核心闭环不需要 API key、不需要数据库、不需要服务端 —— 一个案例 = 一个文件夹，
+    状态全在文件里，看得见、改得动、能回滚。
+    只有可选的 LLM 编排（<code>tsolve agent</code>）才需要一个 key，且只从环境变量读，代码里搜不到。</p>
 
     <div class="steps" style="margin-top:26px">
       <div class="step">
         <h3>拿到代码，跑起来</h3>
-        <p>不装也能跑（把 <code>src</code> 加进模块路径即可）；想用 <code>mm</code> 这个短命令就本地安装。</p>
-        <div class="codeblock"><button class="copy">复制</button>git clone &lt;repo&gt; &amp;&amp; cd modelwright
+        <p>不装也能跑（把 <code>src</code> 加进模块路径即可）；想用 <code>tsolve</code> 这个短命令就本地安装。</p>
+        <div class="codeblock"><button class="copy">复制</button>git clone &lt;repo&gt; &amp;&amp; cd trouble-solver
 
 # 方式一：免安装
-PYTHONPATH=src python -m mm.cli --help
+PYTHONPATH=src python -m troublesolver.cli --help
 
 # 方式二：装成命令（开发模式）
 pip install -e .
-mm --help</div>
+tsolve --help</div>
       </div>
 
       <div class="step">
         <h3>先写《问题说明书》——这是卡点①</h3>
         <p>生成模板 → 填 12 个小节 → 机器校验。<b>不通过就不许进入建模</b>：
     因为 90% 的返工都源于"问题没问全"，而不是"算错了"。</p>
-        <div class="codeblock"><button class="copy">复制</button>mm charter new  mycase/charter.md      # 生成 12 节模板
+        <div class="codeblock"><button class="copy">复制</button>tsolve charter new  mycase/charter.md      # 生成 12 节模板
 #  …… 填：现象/目标/决策/约束/数据/成功标准/时间尺度/相关方/
 #         已有尝试/边界/风险与底线/口径表；【未知】项必须给出处理计划
-mm charter check mycase/charter.md      # 卡点①：不通过则退出码 2</div>
+tsolve charter check mycase/charter.md      # 卡点①：不通过则退出码 2</div>
       </div>
 
       <div class="step">
-        <h3>备好四件套，然后 <code>mm solve</code></h3>
+        <h3>备好四件套，然后 <code>tsolve solve</code></h3>
         <p>求解脚本只负责算，把数字全部写进 <code>out/metrics.json</code>；
     报告模板只负责说，数字一律写成占位符。二者由工具焊在一起。</p>
-        <div class="codeblock"><button class="copy">复制</button>mm solve mycase     # 形式化 → 基线 → 建模 → 证伪 → 台账 → 交付
-mm audit mycase     # 临时目录独立重跑 + 逐数字对账 + 状态漂移检查
-mm ledger check mycase/ledger.json    # 只查台账（快）</div>
+        <div class="codeblock"><button class="copy">复制</button>tsolve solve mycase     # 形式化 → 基线 → 建模 → 证伪 → 台账 → 交付
+tsolve audit mycase     # 临时目录独立重跑 + 逐数字对账 + 状态漂移检查
+tsolve ledger check mycase/ledger.json    # 只查台账（快）</div>
       </div>
 
       <div class="step">
         <h3>把结论钉在台账上</h3>
         <p>每条结论一个条目：状态、方法、跑过哪些协议、口径、证据文件、重算命令、依赖。
     报告只能引用 <code>verified</code> 的条目。</p>
-        <div class="codeblock"><button class="copy">复制</button>mm ledger show mycase/ledger.json     # 看全部结论与状态分布</div>
+        <div class="codeblock"><button class="copy">复制</button>tsolve ledger show mycase/ledger.json     # 看全部结论与状态分布</div>
       </div>
     </div>
 
@@ -338,7 +339,7 @@ mm ledger check mycase/ledger.json    # 只查台账（快）</div>
     </div>
 
     <h3 style="margin-top:34px">跑起来长这样（真实输出）</h3>
-    <div class="term" style="margin-top:12px"><span class="c">$ mm solve examples/newsvendor_inventory</span>
+    <div class="term" style="margin-top:12px"><span class="c">$ tsolve solve examples/newsvendor_inventory</span>
 <span class="w">【阶段 0 形式化】问题说明书：通过</span>
 <span class="w">【阶段 1-2 基线与建模】求解脚本已运行，数字出口 out/metrics.json</span>
   基线 Q0=150 件，周期望利润=1007.35 元（键 baseline）
@@ -347,9 +348,9 @@ mm ledger check mycase/ledger.json    # 只查台账（快）</div>
   已生成 falsify.md
 <span class="g">闭环通过：报告/证伪记录里的每个数字都来自 out/metrics.json（P7）</span>
 
-<span class="c">$ mm audit examples/newsvendor_inventory</span>
+<span class="c">$ tsolve audit examples/newsvendor_inventory</span>
 <span class="w">【阶段 6 复核】已在临时目录独立重跑 solve.py</span>
-  逐数字对账 40 项
+  逐数字对账 41 项
   台账 9 条，状态分布 {"verified": 8, "refuted": 1}
 <span class="g">复核通过：数字可复算、结论状态未漂移</span></div>
   </div>
@@ -474,7 +475,7 @@ mm ledger check mycase/ledger.json    # 只查台账（快）</div>
     <p class="kicker">P7 的执行体</p>
     <h2>数字零手写：不是靠自觉，是靠跑不过去</h2>
     <p class="lead">"报告里的数字必须来自脚本"这句话，如果只写在文档里，等于没写。
-    modelwright 把它做成<b>构建期硬失败</b>：模板里只能写占位符，取不到值就报错退出，
+    TroubleSolver 把它做成<b>构建期硬失败</b>：模板里只能写占位符，取不到值就报错退出，
     连留空的机会都没有。</p>
 
     <div class="cols2" style="margin-top:22px">
@@ -545,10 +546,10 @@ mm ledger check mycase/ledger.json    # 只查台账（快）</div>
       </table>
     </div>
 
-    <div class="cols2" style="margin-top:20px">
+    <div style="margin-top:20px;display:grid;gap:16px">
       <div class="card">
         <h3>加一个全新领域的难题：三步</h3>
-        <div class="codeblock" style="font-size:12.4px">mm charter new  mycase/charter.md   # 1 填 12 节（卡点①）
+        <div class="codeblock" style="font-size:12.4px">tsolve charter new  mycase/charter.md   # 1 填 12 节（卡点①）
 # 2 写两个文件：
 #    solve.py   数字只出口到 out/metrics.json
 #    verify.py  把"可检查的对象"暴露成钩子
@@ -560,20 +561,22 @@ mm ledger check mycase/ledger.json    # 只查台账（快）</div>
 #        "checks": [{"protocol":"P2",
 #                    "fn":"cover_margin",
 #                    "lo":0,"hi":2000,"base_n":51}] }
-mm solve mycase                     # 引擎自动跑检查、填台账、渲染报告
-mm audit mycase                     # 临时目录重跑 + 逐数字/逐检查对账</div>
+tsolve agent mycase                     # 可选：让 LLM 读 charter.md 生成上面第 2~3 步的文件
+tsolve solve mycase                     # 引擎自动跑检查、填台账、渲染报告
+tsolve audit mycase                     # 临时目录重跑 + 逐数字/逐检查对账</div>
       </div>
       <div class="card">
-        <h3>证据：两个不同族的案例，同一个引擎</h3>
+        <h3>证据：四个不同领域的案例，同一个引擎</h3>
         <div class="tbl-scroll">
           <table style="font-size:13.6px">
-            <thead><tr><th></th><th>案例 A</th><th>案例 B</th></tr></thead>
+            <thead><tr><th></th><th>案例 A</th><th>案例 B</th><th>案例 C</th><th>案例 D</th></tr></thead>
             <tbody>
-              <tr><td>数学族</td><td>随机优化<br><span class="muted">期望值 · 离散决策</span></td><td>几何 / 全称断言<br><span class="muted">连续 · ∀ 量词</span></td></tr>
-              <tr><td>结论类型</td><td>统计量·等式·极值<br>稳健性·口径相关</td><td>全称断言·极值·覆盖<br>稳健性·极限</td></tr>
-              <tr><td>P2 触发</td><td>未触发（无全称断言）</td><td><b style="color:var(--orange)">触发，且自动认出窄带陷阱</b></td></tr>
-              <tr><td>台账</td><td>9 条（8 证 + 1 证伪留痕）</td><td>7 条（6 证 + 1 证伪留痕）</td></tr>
-              <tr><td>引擎改动</td><td colspan="2" style="text-align:center"><b>零</b></td></tr>
+              <tr><td>领域</td><td>零售库存<br><span class="muted">报童模型</span></td><td>园区设施<br><span class="muted">步道照明覆盖</span></td><td>消费金融<br><span class="muted">信贷审批阈值</span></td><td>生物 / 资源<br><span class="muted">渔业最大可持续产量</span></td></tr>
+              <tr><td>数学族</td><td>随机优化<br><span class="muted">期望值 · 离散决策</span></td><td>几何 / 全称断言<br><span class="muted">连续 · ∀ 量词</span></td><td>统计量 / 全称断言<br><span class="muted">局部窄带 · 口径对照</span></td><td>连续优化 / 全称断言<br><span class="muted">Schaefer 平衡 · 口径对照</span></td></tr>
+              <tr><td>结论类型</td><td>统计量·等式·极值<br>稳健性·口径相关</td><td>全称断言·极值·覆盖<br>稳健性·极限</td><td>全称断言·极值·统计量<br>口径相关</td><td>全称断言·最优性<br>口径相关·极限</td></tr>
+              <tr><td>P2 触发</td><td>未触发（无全称断言）</td><td><b style="color:var(--orange)">触发，且自动认出窄带陷阱</b></td><td><b style="color:var(--orange)">触发，且自动认出局部窄带违约率超上限</b></td><td><b style="color:var(--orange)">触发，且自动认出局部额外死亡带陷阱</b></td></tr>
+              <tr><td>台账</td><td>9 条（8 证 + 1 证伪留痕）</td><td>7 条（6 证 + 1 证伪留痕）</td><td>6 条（5 证 + 1 证伪留痕）</td><td>5 条（4 证 + 1 证伪留痕）</td></tr>
+              <tr><td>引擎改动</td><td colspan="4" style="text-align:center"><b>零</b></td></tr>
             </tbody>
           </table>
         </div>
@@ -583,7 +586,9 @@ mm audit mycase                     # 临时目录重跑 + 逐数字/逐检查�
     <div class="note" style="margin-top:18px">
       <b>诚实边界（不能泛化的部分必须说清楚）：</b>
       ① <b>怎么建模</b>穷举不了——那是方法论与创造力的活，工具只做它的对偶问题"怎么知道它是对的"；
-      ② <b>钩子要有人写</b>——把可检查的对象暴露出来仍需理解问题的人动一次手，只能做到又小又规范；
+      ② <b>钩子要有人（或 LLM）写、有人过目</b>——<code>tsolve agent</code> 能让 LLM 读 charter.md 生成
+      solve.py / verify.py / 台账，但它们仍走<strong>完全相同</strong>的引擎闭环，且"钩子暴露得对不对"
+      最终仍需理解问题的人过目一道；引擎只保证"结论不可作弊"，不替人担保"建模一定对"；
       ③ <b>搜索无法保证找到任意窄的特征</b>——所以 P2 每次都把搜索分辨率一起报出来，
       把"未找到"读作"在该分辨率下未找到"，绝不写成"已证明成立"。
     </div>
@@ -596,13 +601,13 @@ mm audit mycase                     # 临时目录重跑 + 逐数字/逐检查�
     <p class="kicker">防护实测</p>
     <h2>不是"设计了防护"，是"防护真的会拦"</h2>
     <p class="lead">测试里专门留了一组负例——故意把事情做错，看工具会不会放过去。
-    下面四个是真实输出（前三个同一领域，第四个换个领域）。</p>
+    下面四个是真实输出（覆盖：参数漂移、卡点①、模板占位符、跨领域反例自动抓取）。</p>
 
     <div style="margin-top:22px;display:grid;gap:16px">
       <div class="card">
         <h3>① 悄悄改一个参数（价格 25 → 26）</h3>
         <p class="muted" style="margin:0 0 10px">同一个案例重跑，数字必然会变。审计会逐项报出来，逼你显式确认这次漂移是"有意的"。</p>
-        <div class="term"><span class="c">$ mm audit ./case</span>
+        <div class="term"><span class="c">$ tsolve audit ./case</span>
   数字漂移：result.recommend_Q 期望 133，实测 134（容差 1e-09）
   数字漂移：result.Q_vs_baseline 期望 -17，实测 -16（容差 1e-09）
   数字漂移：result.gain_vs_baseline_per_week 期望 50.846…，实测 47.769…
@@ -612,7 +617,7 @@ mm audit mycase                     # 临时目录重跑 + 逐数字/逐检查�
       <div class="card">
         <h3>② 用户还没确认口径（卡点①）</h3>
         <p class="muted" style="margin:0 0 10px">问题说明书里 <code>用户确认：否</code>，后面直接不给往下走——因为这里错了，后面全白做。</p>
-        <div class="term"><span class="c">$ mm solve ./case</span>
+        <div class="term"><span class="c">$ tsolve solve ./case</span>
 <span class="w">【阶段 0 形式化】问题说明书：未通过</span>
   缺失小节      : 无
   已知/未知/假设 : 3 / 4 / 1
@@ -626,7 +631,7 @@ mm audit mycase                     # 临时目录重跑 + 逐数字/逐检查�
       <div class="card">
         <h3>③ 模板里写了一个不存在的键</h3>
         <p class="muted" style="margin:0 0 10px">不是静默留空，是直接失败——不给"猜一个数字印上去"留任何空间。</p>
-        <div class="term"><span class="c">$ mm solve ./case</span>
+        <div class="term"><span class="c">$ tsolve solve ./case</span>
   已生成 falsify.md
 <span class="r">对账未通过（1 项）：</span>
   - 模板 report.template.md 有 1 个占位符无法从 metrics.json 取值：m.nonexistent.key</div>
@@ -635,10 +640,10 @@ mm audit mycase                     # 临时目录重跑 + 逐数字/逐检查�
 
       <div class="card">
         <h3>④ 换一个领域，它自己抓到了真反例（案例 B）</h3>
-        <p class="muted" style="margin:0 0 10px">管廊覆盖案例里有一条断言：「实测半径下现状布点仍覆盖全长」。
-        51 点均匀网格（步长 40 m）判它<b>成立</b>；引擎的对抗搜索在 x=833.333 m 处找到了约 7 cm 宽的缺口，
+        <p class="muted" style="margin:0 0 10px">园区步道照明覆盖案例里有一条断言：「实测（光衰后）半径下现状布点仍覆盖全长」。
+        51 点均匀网格（步长 40 m）判它<b>成立</b>；引擎的对抗搜索在 x=833.333 m 处找到了约 7 cm 宽的照度缺口，
         并当场把"网格在骗人"这件事写进结论。</p>
-        <div class="term"><span class="c">$ mm solve examples/sensor_coverage</span>
+        <div class="term"><span class="c">$ tsolve solve examples/facility_coverage</span>
 <span class="w">【阶段 3 证伪】自动执行检查 12 条：通过 11，不通过 1</span>
   <span class="r">⚠️ [P2] 实测半径下的覆盖断言：不通过</span>
      网格(51 点/步长 40) 最坏裕度 -6.600e+00 → 对抗搜索最坏裕度 6.667e-02 @ x=833.333
@@ -657,7 +662,7 @@ mm audit mycase                     # 临时目录重跑 + 逐数字/逐检查�
 <section id="not">
   <div class="wrap">
     <p class="kicker">边界</p>
-    <h2>它不做什么（v0.1 明确砍掉）</h2>
+    <h2>它不做什么（明确砍掉）</h2>
     <p class="lead">产品文案避免"保证最优"，改成"<b>给出可验证的次优解 + 失效边界</b>"。
     同样地，功能清单里"不做什么"和"做什么"一样重要。</p>
     <div class="cols2" style="margin-top:22px">
@@ -701,28 +706,34 @@ mm audit mycase                     # 临时目录重跑 + 逐数字/逐检查�
         <tbody>
           <tr><td class="mono">W1</td><td>骨架 + 三阶段 + 台账 + 卡点校验 + 一个业务案例跑通全闭环 + 独立复核</td>
               <td><b style="color:var(--green)">已完成</b>（可运行、19 项测试通过）</td></tr>
-          <tr><td class="mono">W2</td><td>协议引擎化（<code>checks.py</code> 七条可执行检查器）+ 结论类型→必跑协议矩阵 + 第二个异构案例（几何/全称断言族）+ 检查结论纳入 golden 回归</td>
-              <td><b style="color:var(--green)">已完成</b>（41 项测试通过）</td></tr>
-          <tr><td class="mono">W3</td><td>报告 / 图表 / 合规产出模块（600 dpi、禁彩色文字、缺字形检测、身份脱敏自检）</td>
+          <tr><td class="mono">W2</td><td>协议引擎化（<code>checks.py</code> 七条可执行检查器）+ 结论类型→必跑协议矩阵 + 三个异构案例（库存 / 设施覆盖 / 信贷风控）+ 检查结论纳入 golden 回归</td>
+              <td><b style="color:var(--green)">已完成</b>（44 项测试通过）</td></tr>
+          <tr><td class="mono">W3</td><td>LLM 编排层（<code>tsolve agent</code>：prompts + charter.md → 案例文件 → 引擎闭环）+ 第 4 个领域案例（生物 / 资源）+ 英文 README</td>
+              <td><b style="color:var(--green)">已完成</b>（53 项测试通过）</td></tr>
+          <tr><td class="mono">W4</td><td>报告 / 图表 / 合规产出模块（600 dpi、禁彩色文字、缺字形检测、身份脱敏自检）</td>
               <td style="color:var(--muted)">规划中</td></tr>
-          <tr><td class="mono">W4</td><td>README 打磨 + 技术文章 + 发布 v0.1</td>
+          <tr><td class="mono">W5</td><td>技术文章 + 首个公开发布</td>
               <td style="color:var(--muted)">规划中</td></tr>
         </tbody>
       </table>
     </div>
 
     <h3 style="margin-top:34px">仓库结构</h3>
-    <div class="codeblock" style="margin-top:12px">modelwright/
+    <div class="codeblock" style="margin-top:12px">trouble-solver/
 ├── prompts/            阶段提示词：00 引导提问 · 20 建模 · 30 证伪 · 50 交付
-├── src/mm/
-│   ├── cli.py          命令入口：charter / ledger / solve / audit
+├── src/troublesolver/
+│   ├── cli.py          命令入口：charter / ledger / solve / audit / agent
 │   ├── charter.py      问题说明书 12 节机器校验（卡点①）
 │   ├── checks.py       ★ 可执行检查器 + 结论类型→必跑协议矩阵（泛化核心）
 │   ├── ledger.py       台账状态机 + stale 依赖传播 + 交付前对账
+│   ├── orchestrate.py  LLM 编排：prompts + charter.md → 案例文件 → 引擎闭环
 │   ├── case.py         案例编排：solve 与 audit
 │   └── report.py       模板渲染：数字只能从 metrics.json 注入
-├── examples/newsvendor_inventory/    业务案例（单 SKU 备货，报童模型）
-├── tests/              41 项，含一组负例（"故意做错看会不会放过去"）
+├── examples/newsvendor_inventory/    案例 A：零售库存（单 SKU 备货，报童模型）
+├── examples/facility_coverage/       案例 B：园区设施（步道照明覆盖，几何 / 全称断言）
+├── examples/loan_approval_threshold/ 案例 C：消费金融（信贷审批阈值，统计量 / 口径相关）
+├── examples/fishery_msy/             案例 D：生物资源（渔业最大可持续产量 MSY，连续优化 / 全称断言 / 口径）
+├── tests/              53 项，含一组负例（"故意做错看会不会放过去"）
 ├── docs/               协议详解 · 台账详解 · 本发布页
 └── LICENSE             Apache-2.0</div>
   </div>
@@ -732,7 +743,7 @@ mm audit mycase                     # 临时目录重跑 + 逐数字/逐检查�
 
 <footer>
   <div class="wrap">
-    <b>modelwright</b> · 会自我证伪的建模助手 · v0.1 ·
+    <b>TroubleSolver</b> · 会自我证伪的建模助手 · v0.3 ·
     许可 <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache-2.0</a>（含专利授权）<br>
     <span style="font-size:13.5px">一句话：让一个不懂建模的人，拿到一份"<b>知道自己哪里可能错</b>"的解答包。</span>
   </div>
@@ -785,7 +796,7 @@ const MIND = [
     'falsify.md：证伪逐条留痕',
     'ledger.json：可追溯台账',
     'out/metrics.json：数字唯一出口',
-    'mm solve / audit / ledger check'
+    'tsolve solve / audit / ledger check'
   ]}
 ];
 
@@ -824,7 +835,7 @@ const MIND = [
 
   const svg = el('svg', {
     viewBox: `0 0 ${W} ${H}`, role: 'img',
-    'aria-label': 'modelwright 思维导图：为什么做、可追溯台账、它不做什么、七条验证协议、工作流与卡点、交付物与命令'
+    'aria-label': 'TroubleSolver 思维导图：为什么做、可追溯台账、它不做什么、七条验证协议、工作流与卡点、交付物与命令'
   });
   const gBranches = el('g', {});
   svg.appendChild(gBranches);
@@ -912,7 +923,7 @@ const MIND = [
   root.appendChild(tx('text', {
     class: 'root-label', x: CX, y: ROOT_Y - 9,
     'text-anchor': 'middle', 'font-size': '20px'
-  }, 'modelwright'));
+  }, 'TroubleSolver'));
   root.appendChild(tx('text', {
     class: 'root-sub', x: CX, y: ROOT_Y + 14,
     'text-anchor': 'middle', 'font-size': '12.5px'

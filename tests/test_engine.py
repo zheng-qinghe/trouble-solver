@@ -4,7 +4,7 @@
   1. 对抗搜索真的能抓到固定网格跳过的窄违例带（窄带陷阱的自动检测）；
   2. 「结论类型 → 必跑检查」矩阵真的会拦（不许一条全称断言只跑 P1 就自称已验证）；
   3. 检查不通过真的会把结论强制降级为 refuted（不许继续标 verified）。
-另外验证**同一引擎跑两个不同领域的案例**都通过。
+另外验证**同一引擎跑四个不同领域的案例**都通过。
 
 运行： python -m unittest discover -s tests
 """
@@ -20,11 +20,13 @@ import unittest
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "src"))
 
-from mm import checks as ck          # noqa: E402
-from mm.case import Case             # noqa: E402
+from troublesolver import checks as ck          # noqa: E402
+from troublesolver.case import Case             # noqa: E402
 
 EX_A = os.path.join(ROOT, "examples", "newsvendor_inventory")
-EX_B = os.path.join(ROOT, "examples", "sensor_coverage")
+EX_B = os.path.join(ROOT, "examples", "facility_coverage")
+EX_C = os.path.join(ROOT, "examples", "loan_approval_threshold")
+EX_D = os.path.join(ROOT, "examples", "fishery_msy")
 
 
 def _write(path, text):
@@ -263,8 +265,8 @@ class TestEnforcement(unittest.TestCase):
                          "台账里的 protocols 必须是跑出来的，且 P7 自动带上")
 
 
-class TestTwoDomains(unittest.TestCase):
-    """泛化的最终证据：同一引擎、零改动，跑通两个完全不同的领域。"""
+class TestFourDomains(unittest.TestCase):
+    """泛化的最终证据：同一引擎、零改动，跑通四个完全不同的领域。"""
 
     def test_案例A_库存随机优化族(self):
         td = tempfile.mkdtemp()
@@ -288,6 +290,28 @@ class TestTwoDomains(unittest.TestCase):
         rc, _, problems = case.audit(echo=False)
         self.assertEqual(rc, 0, problems)
 
+    def test_案例C_消费信贷风控族(self):
+        td = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, td, True)
+        dst = os.path.join(td, "c")
+        shutil.copytree(EX_C, dst)
+        case = Case(dst)
+        rc, _, problems = case.solve(echo=False)
+        self.assertEqual(rc, 0, problems)
+        rc, _, problems = case.audit(echo=False)
+        self.assertEqual(rc, 0, problems)
+
+    def test_案例D_渔业资源优化族(self):
+        td = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, td, True)
+        dst = os.path.join(td, "d")
+        shutil.copytree(EX_D, dst)
+        case = Case(dst)
+        rc, _, problems = case.solve(echo=False)
+        self.assertEqual(rc, 0, problems)
+        rc, _, problems = case.audit(echo=False)
+        self.assertEqual(rc, 0, problems)
+
     def test_案例B的窄带陷阱被引擎抓到并留痕(self):
         """案例 B 里那条"实测半径下仍覆盖"的断言，必须被自动证伪并保留反例。"""
         td = tempfile.mkdtemp()
@@ -302,6 +326,25 @@ class TestTwoDomains(unittest.TestCase):
         # 而按铭牌半径的那条（只差 0.067 m）必须成立 —— 两条对照才说明判据是精确的
         b2 = [e for e in led if e["id"] == "B-002"][0]
         self.assertEqual(b2["status"], "verified")
+
+    def test_案例D的窄带陷阱被引擎抓到并留痕(self):
+        """案例 D 里那条"有效口径下资源全程可续"的断言，必须被局部额外死亡带自动证伪并保留。
+
+        与案例 B（几何缺口）、案例 C（统计越界带）是三种不同的窄带陷阱机理，
+        同一引擎都抓到了 —— 这正是"通用"的铁证。
+        """
+        td = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, td, True)
+        dst = os.path.join(td, "d")
+        shutil.copytree(EX_D, dst)
+        Case(dst).solve(echo=False)
+        led = _read_json(os.path.join(dst, "ledger.json"))
+        f1 = [e for e in led if e["id"] == "F-001"][0]
+        self.assertEqual(f1["status"], "refuted")
+        self.assertIn("窄带陷阱", f1["notes"])
+        # 而标称口径（不计局部额外死亡）同一条断言必须成立 —— 对照说明是口径在骗人
+        f2 = [e for e in led if e["id"] == "F-002"][0]
+        self.assertEqual(f2["status"], "verified")
 
 
 if __name__ == "__main__":

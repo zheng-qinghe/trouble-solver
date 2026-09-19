@@ -1,4 +1,4 @@
-"""案例目录编排：`mm solve`（跑通闭环）与 `mm audit`（独立重跑对账）。
+"""案例目录编排：`tsolve solve`（跑通闭环）与 `tsolve audit`（独立重跑对账）。
 
 一个「案例」= 一个可复现的建模问题，目录约定：
 
@@ -8,7 +8,7 @@
     ledger.spec.json      结论清单（声明式）：id / kind / claim / checks / caliber / …
     report.template.md    报告模板（数字一律写 {{m.路径}} 占位符）
     falsify.template.md   证伪记录模板（同上，可选）
-    expected.json         冻结的关键数字 + 台账状态 + 检查结论，供 `mm audit` 回归比对
+    expected.json         冻结的关键数字 + 台账状态 + 检查结论，供 `tsolve audit` 回归比对
     out/                  脚本产出（metrics.json / checks.json），不入库
 
 ## 泛化怎么体现（本模块最重要的一件事）
@@ -16,9 +16,9 @@
 `ledger.spec.json` 里每条结论必须声明 **`kind`（结论类型）**，并给出 **`checks`（要跑的检查）**。
 引擎据此做两件事：
 
-1. **按声明真跑**：从 `verify.py` 取钩子函数，交给 `mm.checks` 里的通用检查器执行；
+1. **按声明真跑**：从 `verify.py` 取钩子函数，交给 `troublesolver.checks` 里的通用检查器执行；
    台账里的 `protocols` **由"实际跑过且通过"决定，不许自填**；
-2. **强制完备**：`kind` → 必跑协议（见 `mm.checks.REQUIRED_BY_KIND`）没跑全，直接报错——
+2. **强制完备**：`kind` → 必跑协议（见 `troublesolver.checks.REQUIRED_BY_KIND`）没跑全，直接报错——
    **不许一条"全称断言"只跑 P1 就自称已验证**。
 
 于是加一个新领域的难题，只需：写 `solve.py` + 写 `verify.py` 钩子 + 声明 `kind`/`checks`。
@@ -34,10 +34,10 @@ import subprocess
 import sys
 import tempfile
 
-from mm import charter as ch
-from mm import checks as ck
-from mm import report as rp
-from mm.ledger import Ledger
+from troublesolver import charter as ch
+from troublesolver import checks as ck
+from troublesolver import report as rp
+from troublesolver.ledger import Ledger
 
 REQUIRED = ("charter.md", "solve.py", "ledger.spec.json", "report.template.md")
 
@@ -372,7 +372,7 @@ class Case:
 
         # 4) 引用完整性：报告只能引用 verified；成品里不许剩占位符
         if not os.path.exists(self.ledger_path):
-            problems.append("ledger.json 不存在：先跑 mm solve")
+            problems.append("ledger.json 不存在：先跑 tsolve solve")
         else:
             led = Ledger(self.ledger_path)
             problems += led.check()

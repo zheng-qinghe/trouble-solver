@@ -84,7 +84,7 @@
 - 每个 `【未知】`/`【假设】` 都要在第 11 节或后文有对应的处理计划（稳健化 / 灵敏度 / 明确排除）；
 - 用户已对回述内容确认（记录在一句话里：`用户确认：是`）。
 
-> 校验命令：`mm charter check examples/*/charter.md`
+> 校验命令：`tsolve charter check examples/*/charter.md`
 
 ## 五、反模式（出现即打回）
 

@@ -88,7 +88,7 @@ def peak_by_adversarial():
     这条路径的意义：如果枚举因为上界写错或取值范围写错而漏掉了更优点，
     它与枚举的结论就会不一致——P1 会立刻把它抓出来。
     """
-    from mm import checks
+    from troublesolver import checks
     lo, hi = 0.0, float(solve.Q_MAX)
     x, v = checks.adversarial_argmax(profit_curve, lo, hi, starts=256)
     for half in (0.5, 1e-3, 1e-6):

@@ -1,7 +1,9 @@
-# modelwright —— 会自我证伪的建模助手
+# TroubleSolver —— 会自我证伪的建模助手
+
+**English**: [README.en.md](README.en.md)
 
 > 所有"AI 建模"工具都在解决**怎么写出来**，没人解决**怎么知道它是对的**。
-> modelwright 只做后一件事：给一段业务问题，产出**带验证台账、能被第三方按脚本复算**的解答包，
+> TroubleSolver 只做后一件事：给一段业务问题，产出**带验证台账、能被第三方按脚本复算**的解答包，
 > 并**主动告诉你它在什么条件下失效**。
 
 ```
@@ -54,9 +56,9 @@ P2 / P3 / P5 是"**主动找自己错**"，与只查格式的传统 QA 不是一
 
 ### 泛化：引擎不认识你的领域
 
-协议不是写在提示词里给人看的文字，而是**能跑的检查器**（`src/mm/checks.py`）。
+协议不是写在提示词里给人看的文字，而是**能跑的检查器**（`src/troublesolver/checks.py`）。
 引擎只认识**结论类型**（等式 / 极值 / 全称断言 / 最优性 / 口径相关 / …），
-不认识库存、管廊、促销、探测半径。每条结论声明自己的类型，引擎据此**强制跑齐**该类型该跑的协议：
+不认识库存、照明、促销、信贷评分。每条结论声明自己的类型，引擎据此**强制跑齐**该类型该跑的协议：
 
 ```jsonc
 { "kind": "全称断言",                                  // ← 类型决定必跑 P2+P5
@@ -74,15 +76,29 @@ P2 / P3 / P5 是"**主动找自己错**"，与只查格式的传统 QA 不是一
 
 ```bash
 # 案例 A：库存随机优化族（单 SKU 每周备货量决策）
-PYTHONPATH=src python3 -m mm.cli solve examples/newsvendor_inventory
-PYTHONPATH=src python3 -m mm.cli audit examples/newsvendor_inventory
+PYTHONPATH=src python3 -m troublesolver.cli solve examples/newsvendor_inventory
+PYTHONPATH=src python3 -m troublesolver.cli audit examples/newsvendor_inventory
 
-# 案例 B：几何 / 全称断言族（2 km 管廊传感器布点覆盖）——同一引擎，零改动
-PYTHONPATH=src python3 -m mm.cli solve examples/sensor_coverage
-PYTHONPATH=src python3 -m mm.cli audit examples/sensor_coverage
+# 案例 B：几何 / 全称断言族（园区步道照明覆盖）——同一引擎，零改动
+PYTHONPATH=src python3 -m troublesolver.cli solve examples/facility_coverage
+PYTHONPATH=src python3 -m troublesolver.cli audit examples/facility_coverage
+
+# 案例 C：统计量 / 全称断言 / 口径相关（消费信贷审批阈值）——金融风控领域
+PYTHONPATH=src python3 -m troublesolver.cli solve examples/loan_approval_threshold
+PYTHONPATH=src python3 -m troublesolver.cli audit examples/loan_approval_threshold
+
+# 案例 D：生物 / 资源（渔业最大可持续产量 MSY）——连续优化 + 全称断言 + 口径相关
+PYTHONPATH=src python3 -m troublesolver.cli solve examples/fishery_msy
+PYTHONPATH=src python3 -m troublesolver.cli audit examples/fishery_msy
 
 # 看台账
-PYTHONPATH=src python3 -m mm.cli ledger show examples/sensor_coverage/ledger.json
+PYTHONPATH=src python3 -m troublesolver.cli ledger show examples/facility_coverage/ledger.json
+
+# LLM 编排：读 charter.md + 阶段指令，让模型生成案例文件，再跑同一套闭环
+#（需 $TSOLVE_LLM_API_KEY；密钥只从环境变量读，代码里搜不到）
+PYTHONPATH=src python3 -m troublesolver.cli agent path/to/newcase
+PYTHONPATH=src python3 -m troublesolver.cli agent path/to/newcase --mock   # 离线零密钥（CI 用）
+PYTHONPATH=src python3 -m troublesolver.cli agent path/to/newcase --dry-run  # 只打印拼好的提示
 ```
 
 实际输出（节选）：
@@ -97,7 +113,7 @@ PYTHONPATH=src python3 -m mm.cli ledger show examples/sensor_coverage/ledger.jso
 闭环通过：报告/证伪记录里的每个数字都来自 out/metrics.json（P7）
 ```
 
-`mm audit` 会在**临时目录**里独立重跑一遍求解脚本，再把冻结的数字与检查结论逐个比对，
+`tsolve audit` 会在**临时目录**里独立重跑一遍求解脚本，再把冻结的数字与检查结论逐个比对，
 并检查结论状态有没有偷偷漂移。改一个参数试试——它会立刻拦住你：
 
 ```
@@ -107,23 +123,26 @@ PYTHONPATH=src python3 -m mm.cli ledger show examples/sensor_coverage/ledger.jso
 ## 目录结构
 
 ```
-modelwright/
+trouble-solver/
 ├── prompts/                    给 agent 的阶段指令（阶段 0 / 2 / 3 / 5）
 │   ├── 00_intake.md            引导提问：12 个维度把问题问全
 │   ├── 20_model.md             基线与建模：双路径、数字零手写
 │   ├── 30_falsify.md           证伪：七条协议与三条真实血例
 │   └── 50_deliver.md           交付：交付包清单与硬性规则
-├── src/mm/
-│   ├── cli.py                  mm charter / ledger / solve / audit
+├── src/troublesolver/
+│   ├── cli.py                  tsolve charter / ledger / solve / audit / agent
 │   ├── charter.py              问题说明书完整性校验（卡点①）
 │   ├── ledger.py               台账状态机 + 交付前对账（P7）
 │   ├── checks.py               ★ 可执行检查器 + 结论类型→必跑协议矩阵（泛化的核心）
+│   ├── orchestrate.py          LLM 编排：prompts + charter.md → 案例文件 → 引擎闭环
 │   ├── case.py                 案例编排：闭环与独立复核
 │   └── report.py               模板渲染：数字只能来自 metrics.json
 ├── examples/
 │   ├── newsvendor_inventory/   案例 A：库存随机优化族（9 条台账）
-│   └── sensor_coverage/        案例 B：几何 / 全称断言族（7 条台账，自动抓到窄带陷阱）
-├── tests/                      41 项：把"防护真的会拦"当成测试来跑
+│   ├── facility_coverage/      案例 B：几何 / 全称断言族（7 条台账，自动抓到窄带陷阱）
+│   ├── loan_approval_threshold/ 案例 C：统计量 / 全称断言 / 口径相关族（6 条台账，金融风控）
+│   └── fishery_msy/            案例 D：生物 / 资源族（5 条台账，局部额外死亡带制造的窄带陷阱）
+├── tests/                      44 项：把"防护真的会拦"当成测试来跑
 └── docs/{methods.md,ledger.md,generalization.md}
 ```
 
@@ -136,7 +155,7 @@ verify.py           ★ 验证钩子：把"可检查的对象"暴露给通用检
 ledger.spec.json    结论清单（声明式：kind 结论类型 + checks 要跑的检查 + {{m.路径}} 引用数字）
 report.template.md  报告模板（禁止手写数字）
 falsify.template.md 证伪记录模板
-expected.json       冻结数字（golden file），供 mm audit 回归
+expected.json       冻结数字（golden file），供 tsolve audit 回归
 out/                脚本产出，不入库
 ```
 
@@ -145,13 +164,17 @@ out/                脚本产出，不入库
 | 版本 | 内容 | 状态 |
 |---|---|---|
 | v0.1 | 骨架 + 三阶段 + 台账 + 一个案例跑通全闭环 + 独立复核 | **已完成** |
-| v0.2 | **协议引擎化**（`checks.py`：七条可执行检查器）+ **结论类型→必跑协议矩阵** + 第二个异构案例 + 检查结论纳入 golden 回归 | **已完成**（41 项测试通过） |
-| v0.3 | 报告/图表产出模块（600dpi、禁用彩色文字、缺字形检测）+ 竞赛合规模式 | 计划中 |
-| v0.4 | README 打磨 + 技术文章 + 首个公开发布 | 计划中 |
+| v0.2 | **协议引擎化**（`checks.py`：七条可执行检查器）+ **结论类型→必跑协议矩阵** + 三个异构案例（库存 / 设施覆盖 / 信贷风控）+ 检查结论纳入 golden 回归 | **已完成**（44 项测试通过） |
+| v0.3 | **LLM 编排层**（`tsolve agent`：读 charter.md + 阶段指令生成案例文件，再跑闭环）+ 第 4 个领域案例（生物 / 资源）+ 英文 README | **已完成**（53 项测试通过） |
+| v0.4 | 报告/图表产出模块（高分辨率输出、禁用彩色文字、缺字形检测）+ 交付合规模式 | 计划中 |
+| v0.5 | 技术文章 + 首个公开发布 | 计划中 |
 
-**当前边界（自行判断能不能用）**：它是**确定性闭环**——案例的求解脚本与验证钩子由人/agent 写好，
-工具负责卡点、自动跑协议、台账、数字对账与复核。`prompts/` 里的阶段指令目前是交给 agent 执行的，
-还没有内置的 LLM 编排。换句话说：**它保证"交付物不可作弊"，还不保证"模型自动想得对"。**
+**当前边界（自行判断能不能用）**：`prompts/` 的四个阶段指令现在**通过 `tsolve agent` 接上了 LLM 编排**——
+LLM 读 `charter.md` 生成 `solve.py` / `verify.py` / `ledger.spec.json` / 模板 / `expected.json`，
+但这些生成物**仍走和手写案例完全相同的引擎闭环**（卡点、七条协议、台账、数字对账、独立复核一个不少）。
+所以分工是：**LLM 负责"把问题想成代码"，引擎负责"证明代码得出的结论没作弊"**。
+它仍不保证 LLM 一定想得对——但凡 LLM 写出的结论，都会被七条协议独立验证、被 `audit` 逐数字对账；
+想错了会被当场降级为 `refuted` 并留痕（见案例 B / C / D）。密钥只从环境变量读，代码里搜不到。
 
 ## 设计取舍（为什么这么"小"）
 

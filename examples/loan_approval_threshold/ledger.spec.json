@@ -1,0 +1,123 @@
+{
+  "case": "loan_approval_threshold",
+  "note": "案例：分类阈值/全称断言族。结论类型组合（全称断言/极值/稳健性/口径相关）与前两个案例（随机优化、几何覆盖）都不同，但走同一张 REQUIRED_BY_KIND 表、同一套检查器。本案例的看点：平均值口径会掩盖局部窄带风险。",
+  "claims": [
+    {
+      "id": "L-001",
+      "claim": "（已证伪，留痕）「现状阈值 {{m.params.T_now}} 下，所有审批通过客户（评分 ≥ {{m.params.T_now}}）违约率均 ≤ 上限 {{m.params.cap|.2f}}」——实际评分 {{m.baseline.worst_at|.1f}} 处违约率达 {{m.baseline.worst_rate|.4f}}，越上限 {{m.baseline.worst_rate|.4f}} − {{m.params.cap|.2f}}",
+      "status": "refuted",
+      "method": "P2 全称断言审计（对抗搜索）",
+      "checks": [
+        {"protocol": "P2", "name": "现状阈值下的逐点断言",
+         "fn": "default_margin", "lo": 600, "hi": 850, "base_n": 51}
+      ],
+      "caliber": {
+        "定义": "违约率(s) ≤ 上限 ⟺ 对任意审批通过客户成立",
+        "适用边界": "该断言已被证伪，任何交付物不得再引用；违例带仅约 5 分宽，粗网格会整段跳过",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": []
+    },
+    {
+      "id": "L-002",
+      "kind": "全称断言",
+      "claim": "将阈值提高到 {{m.params.T_rec}} 后，所有审批通过客户（评分 ≥ {{m.params.T_rec}}）最坏违约率 {{m.pointwise.T650_worst_rate|.4f}} ≤ 上限 {{m.params.cap|.2f}}",
+      "status": "verified",
+      "method": "P2 对抗搜索（评分 ≥ {{m.params.T_rec}} 域）+ P5 翻转边界（该域内无翻转）",
+      "checks": [
+        {"protocol": "P2", "name": "抬高阈值后的逐点断言",
+         "fn": "default_margin", "lo": 650, "hi": 850, "base_n": 51},
+        {"protocol": "P5", "name": "阈值 650 域内无翻转",
+         "fn": "flip_threshold", "lo": 650, "hi": 700}
+      ],
+      "caliber": {
+        "定义": "违约率(s) ≤ 上限 ⟺ 对任意审批通过客户成立",
+        "适用边界": "阈值抬到 {{m.params.T_rec}} 后窄带（中心 {{m.params.bump_center}}）被排除在审批域外，断言才成立",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": []
+    },
+    {
+      "id": "L-003",
+      "kind": "极值",
+      "claim": "最坏违约率为 {{m.P1_dual_path.worst_rate_analytic|.4f}}（出现在窄带中心附近），两条独立算法相对差 {{m.P1_dual_path.rel_diff|.2e}}",
+      "status": "verified",
+      "method": "路径A 解析尖峰；路径B 全评分域对抗搜索",
+      "checks": [
+        {"protocol": "P1", "name": "最坏违约率：解析 vs 对抗搜索",
+         "fn": ["worst_rate_analytic", "worst_rate_adversarial"], "rtol": 1e-9},
+        {"protocol": "P3", "name": "违约率曲线的连续复核（平台区间）",
+         "fn": "default_rate_curve", "lo": 300, "hi": 850, "base_n": 401}
+      ],
+      "caliber": {
+        "定义": "最坏违约率 = 全评分域上违约率的上确界",
+        "适用边界": "窄带宽度由 bump_sigma 决定；算最坏点必须覆盖整段，不能只扫网格",
+        "可外推": true
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": []
+    },
+    {
+      "id": "L-004",
+      "kind": "稳健性",
+      "claim": "阈值翻转边界 T* ≈ {{m.flip.threshold_flip|.2f}}：阈值低于它时仍有客户越上限，高于它后才全部满足",
+      "status": "verified",
+      "method": "对翻转变换 g(T)=min_{s≥T}(上限−违约率) 二分求边界",
+      "checks": [
+        {"protocol": "P5", "name": "阈值翻转边界",
+         "fn": "flip_threshold", "lo": 600, "hi": 700}
+      ],
+      "caliber": {
+        "定义": "翻转边界 = 使「逐点最坏裕度」从负翻正的阈值",
+        "适用边界": "边界只保证到搜索分辨率；阈值取整方向必须向上留缓冲",
+        "可外推": true
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": ["L-003"]
+    },
+    {
+      "id": "L-005",
+      "kind": "口径相关",
+      "claim": "同一阈值 {{m.params.T_rec}} 下，30 天逾期口径违约率 {{m.caliber.thirty_day_rate|.4f}}，90 天违约口径 {{m.caliber.ninety_day_rate|.4f}}（口径不同，禁止直接相减）",
+      "status": "verified",
+      "method": "两种口径各自计算，并列报出",
+      "checks": [
+        {"protocol": "P6", "name": "并列数字是否各自带口径",
+         "fn": "caliber_two", "allow_cross": true}
+      ],
+      "caliber": {
+        "定义": "30 天逾期低估真实损失；90 天违约含已核销，本模型采用",
+        "适用边界": "两套口径结果禁止相减或混排；风控按 90 天口径，披露按 30 天口径",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": []
+    },
+    {
+      "id": "L-006",
+      "kind": "口径相关",
+      "claim": "组合平均口径下 T={{m.params.T_now}} 时平均违约率仅 {{m.caliber.avg_T600|.4f}}（看似安全），但逐点最坏口径下达 {{m.caliber.pointwise_T600|.4f}}（已越上限）——平均值掩盖了局部窄带风险",
+      "status": "verified",
+      "method": "两种「是否安全」口径并列报出（不做相减）",
+      "checks": [
+        {"protocol": "P6", "name": "平均口径 vs 逐点最坏口径",
+         "fn": "caliber_avg_vs_point", "allow_cross": true}
+      ],
+      "caliber": {
+        "定义": "组合平均 = 均匀人群加权；逐点最坏 = 最不利单客户",
+        "适用边界": "平均口径会稀释局部窄带，监管/风控必须看逐点最坏口径",
+        "可外推": false
+      },
+      "evidence": ["out/metrics.json"],
+      "recompute": "python solve.py",
+      "depends_on": []
+    }
+  ]
+}

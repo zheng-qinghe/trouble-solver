@@ -2,7 +2,7 @@
 
 - 案例：`examples/newsvendor_inventory`
 - 数字来源：`out/metrics.json`（本报告不含任何手写数字）
-- 复现命令：`python solve.py` ／ 复核命令：`mm audit examples/newsvendor_inventory`
+- 复现命令：`python solve.py` ／ 复核命令：`tsolve audit examples/newsvendor_inventory`
 - 台账：9 条结论，其中已证 8 条、已证伪（留痕）1 条
 
 ## 一、结论（可直接执行）
@@ -39,7 +39,7 @@
 | P4 极限与量纲 | 参数取极限须退化为已知结果 | 缺货惩罚 → 0 时临界分位数退化为经典报童比 0.5789 | 通过（另一条极限未覆盖，见 `falsify.md`） |
 | P5 反例搜索 | 主动搜使结论翻转的参数区域 | 促销概率 ≥ 21.98% 时基线由偏保守转为偏激进；推荐值在该区间失效 | 通过（1 条反例） |
 | P6 口径声明 | 每个数字标来源/定义/边界/可外推 | 见 §二 口径警告与台账 `caliber` 字段 | 通过 |
-| P7 台账对账 | 每个对外数字可由一条命令重算 | 本报告数字全部由占位符注入；`mm audit` 独立重跑逐项比对 | 通过 |
+| P7 台账对账 | 每个对外数字可由一条命令重算 | 本报告数字全部由占位符注入；`tsolve audit` 独立重跑逐项比对 | 通过 |
 
 ## 四、局限与失效边界（**必读**）
 
@@ -58,14 +58,14 @@
 共 9 条：已证 8 条、已证伪留痕 1 条。
 交付物只允许引用"已证"条目；被证伪的条目连证据一起保留在 `ledger.json` 中，防止同一个错误结论再次被写进报告。
 
-- 查看：`mm ledger show examples/newsvendor_inventory/ledger.json`
-- 对账：`mm ledger check examples/newsvendor_inventory/ledger.json`
+- 查看：`tsolve ledger show examples/newsvendor_inventory/ledger.json`
+- 对账：`tsolve ledger check examples/newsvendor_inventory/ledger.json`
 
 ## 六、复现方式
 
 ```bash
 cd examples/newsvendor_inventory
 python solve.py        # 重算 → out/metrics.json
-mm solve .             # 走完整闭环：卡点校验 → 台账 → 本报告
-mm audit .             # 独立重跑 + 逐数字对账（阶段 6）
+tsolve solve .             # 走完整闭环：卡点校验 → 台账 → 本报告
+tsolve audit .             # 独立重跑 + 逐数字对账（阶段 6）
 ```

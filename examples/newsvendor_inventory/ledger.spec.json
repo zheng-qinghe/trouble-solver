@@ -1,6 +1,6 @@
 {
   "case": "newsvendor_inventory",
-  "note": "结论清单（声明式）。三条硬规则：① claim 里的 {{m.路径}} 在 mm solve 时被钉成 out/metrics.json 里的真实数字；② 每条 verified 结论必须声明 kind（结论类型），引擎据此强制跑齐该类型该跑的检查；③ protocols 不再手写——它由实际跑过的检查结果决定。",
+  "note": "结论清单（声明式）。三条硬规则：① claim 里的 {{m.路径}} 在 tsolve solve 时被钉成 out/metrics.json 里的真实数字；② 每条 verified 结论必须声明 kind（结论类型），引擎据此强制跑齐该类型该跑的检查；③ protocols 不再手写——它由实际跑过的检查结果决定。",
   "claims": [
     {
       "id": "C-001",

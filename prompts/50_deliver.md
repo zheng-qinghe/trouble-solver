@@ -25,21 +25,21 @@
    **不同口径的数字不得相减**。
 5. **不写"最优"、写"在什么口径与假设下的最优解"**；不写"保证"，改说"可验证的次优解 + 失效边界"。
 6. **交付质量自检**（从实战踩坑固化）：交付前跑一遍
-   `mm ledger check` + `mm audit`；
+   `tsolve ledger check` + `tsolve audit`；
    若交付物含 PDF/图片，另需检查页数上限、落纸字号、缺字形（tofu）、身份信息脱敏。
 
 ## 三、验收命令
 
 ```bash
-mm solve <case_dir>     # 卡点① 卡点② 台账 占位符注入，全过才算跑通
-mm audit <case_dir>     # 临时目录独立重跑 + 逐数字对账 + 状态漂移检查
-mm ledger check <case_dir>/ledger.json   # 只查台账（快）
+tsolve solve <case_dir>     # 卡点① 卡点② 台账 占位符注入，全过才算跑通
+tsolve audit <case_dir>     # 临时目录独立重跑 + 逐数字对账 + 状态漂移检查
+tsolve ledger check <case_dir>/ledger.json   # 只查台账（快）
 ```
 
 三者的区别要讲清楚：
-- `mm solve` 回答"**这份交付物是不是从脚本长出来的**"；
-- `mm audit` 回答"**换台机器、换个时间重跑，数字还一样吗**"（阶段 6，独立复核）；
-- `mm ledger check` 回答"**每条结论有没有证据、有没有重算命令、有没有引用已作废的结论**"。
+- `tsolve solve` 回答"**这份交付物是不是从脚本长出来的**"；
+- `tsolve audit` 回答"**换台机器、换个时间重跑，数字还一样吗**"（阶段 6，独立复核）；
+- `tsolve ledger check` 回答"**每条结论有没有证据、有没有重算命令、有没有引用已作废的结论**"。
 
 ## 四、反模式（出现即打回）
 

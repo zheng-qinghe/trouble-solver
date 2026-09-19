@@ -46,7 +46,7 @@
 这是台账最实用的一个功能——改一个参数，机器告诉你哪些结论已经过期，
 而不是靠人回忆"这条结论是不是也受那个参数影响"。
 
-## 对账规则（`mm ledger check`）
+## 对账规则（`tsolve ledger check`）
 
 一条 `verified` 的台账必须齐备以下四项，缺一即报错：
 
@@ -66,9 +66,9 @@
 建议每周备货 {{m.result.recommend_Q}} 件，相对基线多 {{m.result.gain_vs_baseline_per_week|.2f}} 元/周。
 ```
 
-- `mm solve` 渲染时从 `out/metrics.json` 取值；**取不到值 → 构建失败**（不是留空、不是猜）；
+- `tsolve solve` 渲染时从 `out/metrics.json` 取值；**取不到值 → 构建失败**（不是留空、不是猜）；
 - 数量级格式交给 Python 格式化（`.2f`、`.1%`、`,.0f`）；
-- 成品里若还剩未解析的占位符，`mm audit` 会拦下来。
+- 成品里若还剩未解析的占位符，`tsolve audit` 会拦下来。
 
 顺带一条踩坑：**JSON 键名不要含点号**（`profit_band_0.1pct` 这种会把占位符路径切断），
 写成 `profit_band_0p1pct`。这不是洁癖——它会在渲染期直接报"取不到值"。

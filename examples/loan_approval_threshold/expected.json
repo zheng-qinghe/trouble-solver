@@ -1,0 +1,56 @@
+{
+  "note": "案例（分类阈值/全称断言族）的 golden 文件：冻结的关键数字 + 台账状态 + 检查结论。",
+  "tolerance": {
+    "default": 1e-09
+  },
+  "metrics": {
+    "params.score_lo": 300.0,
+    "params.score_hi": 850.0,
+    "params.T_now": 600.0,
+    "params.T_rec": 650.0,
+    "params.cap": 0.05,
+    "params.bump_center": 617.5,
+    "params.bump_amp": 0.035,
+    "params.bump_sigma": 3.0,
+    "baseline.T": 600.0,
+    "baseline.worst_rate": 0.06665,
+    "baseline.worst_at": 617.4999999999841,
+    "baseline.verdict": "现状阈值 600：看似组合平均安全，但存在局部越上限客户",
+    "pointwise.T600_worst_rate": 0.06665,
+    "pointwise.T600_worst_at": 617.4999999999841,
+    "pointwise.T600_margin": -0.016649999999999998,
+    "pointwise.T650_worst_rate": 0.03165,
+    "pointwise.T650_worst_at": 650.0,
+    "pointwise.T650_margin": 0.018350000000000005,
+    "P1_dual_path.worst_rate_analytic": 0.06665,
+    "P1_dual_path.worst_rate_adversarial": 0.06665,
+    "P1_dual_path.rel_diff": 0.0,
+    "flip.threshold_flip": 619.9106983181991,
+    "caliber.thirty_day_rate": 0.022154999999999998,
+    "caliber.ninety_day_rate": 0.03165,
+    "caliber.avg_T600": 0.03239294472792486,
+    "caliber.pointwise_T600": 0.06665,
+    "result.recommend_T": 650.0,
+    "result.avg_default_T600": 0.03239294472792486,
+    "result.pointwise_worst_T600": 0.06665,
+    "result.margin_of_avg_vs_cap": 0.017607055272075144
+  },
+  "ledger_status": {
+    "L-001": "refuted",
+    "L-002": "verified",
+    "L-003": "verified",
+    "L-004": "verified",
+    "L-005": "verified",
+    "L-006": "verified"
+  },
+  "check_verdicts": {
+    "L-001/P2": false,
+    "L-002/P2": true,
+    "L-002/P5": true,
+    "L-003/P1": true,
+    "L-003/P3": true,
+    "L-004/P5": true,
+    "L-005/P6": true,
+    "L-006/P6": true
+  }
+}

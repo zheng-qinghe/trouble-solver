@@ -1,0 +1,60 @@
+{
+  "note": "案例（生物/资源族：连续优化 + 全称断言 + 口径相关）的 golden 文件：冻结的关键数字 + 台账状态 + 检查结论。",
+  "tolerance": {
+    "default": 1e-09
+  },
+  "metrics": {
+    "params.K": 1000.0,
+    "params.r": 0.4,
+    "params.q": 0.001,
+    "params.E_now": 120.0,
+    "params.B_min": 240.0,
+    "params.E_spike": 183.0,
+    "params.amp": 320.0,
+    "params.sigma": 8.0,
+    "baseline.E": 120.0,
+    "baseline.x_now": 700.0,
+    "baseline.yield_now": 84.0,
+    "msy.E_star_analytic": 200.0,
+    "msy.E_star_numeric": 200.00000000001123,
+    "msy.y_max_analytic": 100.0,
+    "msy.y_max_numeric": 100.00000000000001,
+    "msy.rel_diff": 1.4210854715202004e-16,
+    "P1_dual_path.y_max_analytic": 100.0,
+    "P1_dual_path.y_max_numeric": 100.00000000000001,
+    "P1_dual_path.rel_diff": 1.4210854715202004e-16,
+    "pointwise.worst_margin": 17.812652538232214,
+    "pointwise.worst_margin_at": 183.25000000000742,
+    "pointwise.worst_margin_now": -460.0000000000117,
+    "pointwise.worst_margin_now_at": 119.99999999999532,
+    "caliber.eff_at_spike": 222.5,
+    "caliber.nominal_at_spike": 542.5,
+    "nominal.worst_margin": -10.124999999915218,
+    "nominal.worst_at": 299.9500000000339,
+    "nominal.margin_at_spike": -302.5,
+    "flip.E_star_yield": 200.0,
+    "limit.E0_yield": 0.0,
+    "limit.E400_x": 0.0,
+    "result.recommend_E": 200.0,
+    "result.yield_max": 100.0,
+    "result.yield_now": 84.0,
+    "result.gain_to_msy": 16.0
+  },
+  "ledger_status": {
+    "F-001": "refuted",
+    "F-002": "verified",
+    "F-003": "verified",
+    "F-004": "verified",
+    "F-005": "verified"
+  },
+  "check_verdicts": {
+    "F-001/P2": false,
+    "F-002/P2": true,
+    "F-002/P5": true,
+    "F-003/P1": true,
+    "F-003/P3": true,
+    "F-003/P5": true,
+    "F-004/P6": true,
+    "F-005/P4": true
+  }
+}

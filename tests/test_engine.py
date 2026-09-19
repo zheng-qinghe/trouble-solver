@@ -72,10 +72,17 @@ MIN_CHARTER = """# 问题说明书：最小测试案例
 """
 
 MIN_SOLVE = """import json, os
-os.makedirs("out", exist_ok=True)
-m = {"baseline": {"Q": 10, "profit": 100.0}}
-with open(os.path.join("out", "metrics.json"), "w", encoding="utf-8") as f:
-    json.dump(m, f)
+
+
+def main():
+    os.makedirs("out", exist_ok=True)
+    m = {"baseline": {"Q": 10, "profit": 100.0}}
+    with open(os.path.join("out", "metrics.json"), "w", encoding="utf-8") as f:
+        json.dump(m, f)
+
+
+if __name__ == "__main__":
+    main()
 """
 
 MIN_TEMPLATE = "# 报告\n\n基线 Q = {{m.baseline.Q}}\n"
@@ -263,6 +270,29 @@ class TestEnforcement(unittest.TestCase):
         led = _read_json(os.path.join(self.td, "case", "ledger.json"))
         self.assertEqual(led[0]["protocols"], ["P1", "P7"],
                          "台账里的 protocols 必须是跑出来的，且 P7 自动带上")
+
+    def test_加载钩子不在调用者目录留下副作用(self):
+        """solve.py / verify.py 的**模块级副作用**不能落到调用者的当前目录。
+
+        引擎为了拿钩子会把 solve.py 当模块 import，于是它模块级的
+        `os.makedirs("out")` 会在"调用者的 cwd"执行 —— 实测踩过：
+        在仓库根跑测试，根上凭空长出一个 out/。既然 solve.py 平时是以
+        **案例目录**为 cwd 当子进程跑的，import 取钩子时也必须用同一个 cwd。
+        """
+        hooks_with_side_effect = (
+            "import os\n"
+            "os.makedirs('out', exist_ok=True)\n"      # 故意**不**放进 __main__ 里
+            "def hook_a():\n    return 1\n\n\n"
+            "def hook_b():\n    return 1\n")
+        with tempfile.TemporaryDirectory() as outside:
+            cwd0 = os.getcwd()
+            os.chdir(outside)
+            try:
+                self._case([basic_claim()], hooks_with_side_effect).load_hooks()
+                self.assertFalse(os.path.exists(os.path.join(outside, "out")),
+                                 "加载钩子不该在调用者目录里建 out/")
+            finally:
+                os.chdir(cwd0)
 
 
 class TestFourDomains(unittest.TestCase):

@@ -191,7 +191,7 @@ trouble-solver/
 │   ├── facility_coverage/      案例 B：几何 / 全称断言族（7 条台账，自动抓到窄带陷阱）
 │   ├── loan_approval_threshold/ 案例 C：统计量 / 全称断言 / 口径相关族（6 条台账，金融风控）
 │   └── fishery_msy/            案例 D：生物 / 资源族（5 条台账，局部额外死亡带制造的窄带陷阱）
-├── tests/                      59 项：把"防护真的会拦"当成测试来跑
+├── tests/                      60 项：把"防护真的会拦"当成测试来跑
 └── docs/{methods.md,ledger.md,generalization.md}
 ```
 
@@ -199,7 +199,7 @@ trouble-solver/
 
 ```
 charter.md          问题说明书（12 节，机器校验；卡点① 凭据）
-solve.py            求解脚本，唯一数字出口 out/metrics.json
+solve.py            求解脚本，唯一数字出口 out/metrics.json（副作用放 main()，加 __main__ 守卫）
 verify.py           ★ 验证钩子：把"可检查的对象"暴露给通用检查器
 ledger.spec.json    结论清单（声明式：kind 结论类型 + checks 要跑的检查 + {{m.路径}} 引用数字）
 report.template.md  报告模板（禁止手写数字）
@@ -215,7 +215,7 @@ out/                脚本产出，不入库
 | v0.1 | 骨架 + 三阶段 + 台账 + 一个案例跑通全闭环 + 独立复核 | **已完成** |
 | v0.2 | **协议引擎化**（`checks.py`：七条可执行检查器）+ **结论类型→必跑协议矩阵** + 三个异构案例（库存 / 设施覆盖 / 信贷风控）+ 检查结论纳入 golden 回归 | **已完成**（44 项测试通过） |
 | v0.3 | **LLM 编排层**（`tsolve agent`：读 charter.md + 阶段指令生成案例文件，再跑闭环）+ 第 4 个领域案例（生物 / 资源）+ 英文 README | **已完成**（53 项测试通过） |
-| v0.4 | **能被"雇"进任何项目**：MCP server（6 个工具，跨宿主）+ 岗位说明书 `agents/` + 一键 `install/hire.sh`；WorkBuddy 专家包改为**从本仓库构建**（消除两份拷贝漂移） | **已完成**（59 项测试通过） |
+| v0.4 | **能被"雇"进任何项目**：MCP server（6 个工具，跨宿主）+ 岗位说明书 `agents/` + 一键 `install/hire.sh`；WorkBuddy 专家包改为**从本仓库构建**（消除两份拷贝漂移） | **已完成**（60 项测试通过） |
 | v0.5 | 报告/图表产出模块（高分辨率输出、禁用彩色文字、缺字形检测）+ 交付合规模式 | 计划中 |
 | v0.6 | 技术文章 + 首个公开发布 | 计划中 |
 

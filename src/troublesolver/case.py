@@ -95,8 +95,14 @@ class Case:
         if not os.path.exists(path):
             return {}
         saved_solve = sys.modules.get("solve")
+        # solve.py 平时是以**案例目录**为 cwd 当子进程跑的（见 run_solver）。
+        # 这里 import 它取钩子时也必须用同一个 cwd —— 否则它的**模块级副作用**
+        # （各案例与模板都爱写 os.makedirs("out", exist_ok=True)）会落到**调用者的当前目录**，
+        # 在人家工作目录里凭空多出一个 out/。实测踩过：在仓库根跑测试，根上长出 out/。
+        saved_cwd = os.getcwd()
         sys.path.insert(0, self.dir)
         try:
+            os.chdir(self.dir)
             solve_path = self.p("solve.py")
             if os.path.exists(solve_path):
                 sspec = importlib.util.spec_from_file_location("solve", solve_path)
@@ -110,6 +116,7 @@ class Case:
             mod = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
         finally:
+            os.chdir(saved_cwd)
             sys.path.remove(self.dir)
             if saved_solve is not None:
                 sys.modules["solve"] = saved_solve

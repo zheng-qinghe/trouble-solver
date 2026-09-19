@@ -215,7 +215,7 @@ trouble-solver/
 │   ├── facility_coverage/      Case B: geometry / universal claims (7 entries, automatically caught a narrow-band trap)
 │   ├── loan_approval_threshold/ Case C: statistics / calibers (6 entries, consumer credit)
 │   └── fishery_msy/            Case D: biology / resource management (5 entries, narrow-band trap from a localized mortality band)
-├── tests/                      59 tests: "the guards actually fire" treated as tests
+├── tests/                      60 tests: "the guards actually fire" treated as tests
 └── docs/{methods.md,ledger.md,generalization.md,index.html}
 ```
 
@@ -239,7 +239,7 @@ out/                 Script outputs, not committed
 | v0.1 | Skeleton + three stages + ledger + one case end-to-end + independent review | **Done** |
 | v0.2 | **Protocol engine** (`checks.py`: seven runnable checkers) + **conclusion-type → mandatory-protocol matrix** + three heterogeneous cases (inventory / facility coverage / credit) + check verdicts in the golden regression | **Done** (44 tests) |
 | v0.3 | **LLM orchestration** (`tsolve agent`: prompts + charter.md → case files → loop) + 4th domain case (biology / resources) + English README | **Done** (53 tests) |
-| v0.4 | **Hireable by any project**: MCP server (6 tools, cross-host) + role card `agents/` + one-command `install/hire.sh`; the WorkBuddy expert card is now **built from this repo** (removing the two-copies drift) | **Done** (59 tests) |
+| v0.4 | **Hireable by any project**: MCP server (6 tools, cross-host) + role card `agents/` + one-command `install/hire.sh`; the WorkBuddy expert card is now **built from this repo** (removing the two-copies drift) | **Done** (60 tests) |
 | v0.5 | Report/chart output module (high-DPI, colored text banned, missing-glyph detection) + delivery-compliance mode | Planned |
 | v0.6 | Technical write-up + first public release | Planned |
 

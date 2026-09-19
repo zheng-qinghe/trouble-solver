@@ -260,13 +260,20 @@ def run_agent(case_dir: str, client: LLMClient, echo: bool = True,
 # （仅用于测试 / 离线演示，证明生成→solve→audit 链路不依赖活 key）
 # ----------------------------------------------------------------------------
 def _demo_case_files() -> Dict[str, str]:
+    # 注意：副作用一律放进 main() 并用 __main__ 守卫 —— 引擎会把 solve.py 当模块
+    # import 来取钩子，模块级语句会在**调用者的目录**执行（会在人家工作目录里建 out/）。
     solve = (
         "import json, os\n"
-        "os.makedirs('out', exist_ok=True)\n"
-        "m = {'baseline': {'Q': 10, 'profit': 100.0},\n"
-        "     'result': {'recommend_Q': 10}}\n"
-        "with open(os.path.join('out', 'metrics.json'), 'w', encoding='utf-8') as f:\n"
-        "    json.dump(m, f)\n"
+        "\n"
+        "def main():\n"
+        "    os.makedirs('out', exist_ok=True)\n"
+        "    m = {'baseline': {'Q': 10, 'profit': 100.0},\n"
+        "         'result': {'recommend_Q': 10}}\n"
+        "    with open(os.path.join('out', 'metrics.json'), 'w', encoding='utf-8') as f:\n"
+        "        json.dump(m, f)\n"
+        "\n"
+        "if __name__ == '__main__':\n"
+        "    main()\n"
     )
     verify = (
         "def hook_a():\n"

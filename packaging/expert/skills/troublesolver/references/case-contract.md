@@ -8,7 +8,7 @@
 | 文件 | 硬性要求 |
 |---|---|
 | `charter.md` | 12 节（标题必须以 `1 现象与触发` … `12 口径表` 开头）；§12 表**至少 1 行数据**且每行 5 格非空；**每个 `【未知】` 行内必须有 `→` 处理计划**；文末 `用户确认：是` |
-| `solve.py` | 唯一数字出口 `out/metrics.json`；**必须含 `baseline` 键**；键名**不得含点号**（会截断报告占位符路径）；末尾把关键数字 `print` 出来（人肉可核对） |
+| `solve.py` | 唯一数字出口 `out/metrics.json`；**必须含 `baseline` 键**；键名**不得含点号**（会截断报告占位符路径）；末尾把关键数字 `print` 出来（人肉可核对）。⚠️ **副作用必须放进 `main()` 并加 `if __name__ == "__main__":` 守卫** —— 引擎会把 `solve.py` 当模块 import 来取钩子，模块级语句会在**调用者的目录**执行（会在人家工作目录里建出 `out/`） |
 | `verify.py` | 验证钩子，内部 `import solve`；`ledger.spec.json` 里 `checks[].fn` 引用的名字必须在此文件**真实存在** |
 | `ledger.spec.json` | `{case, claims:[{id, kind, claim, status, method, checks, caliber, evidence, recompute, depends_on}]}`；`claim` 里的数字写成 `{{m.路径}}` |
 | `report.template.md` | 数字只能写 `{{m.路径\|格式}}`，**禁止裸数字**（占位符取不到值 → 构建失败） |

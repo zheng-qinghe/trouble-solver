@@ -5,7 +5,7 @@
 > **verifiable ledger whose numbers a third party can recompute from a script**, and it
 > **tells you the conditions under which its own conclusions break**.
 
-> **Positioning (one line)**: an **open-source, self-falsifying modeling agent** — it first helps you
+> **Positioning (one line)**: an **open-source, self-falsifying modeling assistant** — it first helps you
 > ask the problem completely (a 12-dimension problem charter + checkpoint review), then models it,
 > then **actively hunts for its own counterexamples** (seven executable verification protocols P1–P7);
 > no hand-copied numbers, every delivered figure recomputable.

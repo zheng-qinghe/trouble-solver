@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# TroubleSolver CLI（专家包内置版）。零第三方依赖，只需要 python3。
+# 用法：tsolve charter check <file> | tsolve solve <case_dir> | tsolve audit <case_dir> | ...
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "${TSOLVE_PYTHON:-python3}" "$HERE/../skills/troublesolver/scripts/tsolve.py" "$@"

@@ -147,6 +147,48 @@ verdicts one by one, and checks that no conclusion status drifted. Change one pa
   - 数字漂移：result.recommend_Q 期望 133，实测 134（容差 1e-09）
 ```
 
+## Hire it into your project (one command)
+
+> "Taking a position" is not a self-introduction — it is two things that actually land:
+> a **role card any host can read** (`agents/troublesolver.md`) and a **tool endpoint any host
+> can call** (the MCP server, `tsolve-mcp`). Both live in this repo, so **anyone who clones it can hire it**.
+
+```bash
+git clone <repo> trouble-solver
+bash trouble-solver/install/hire.sh /path/to/your-project
+```
+
+It delivers three things into the target project (**all reversible**; undo with `--undo`):
+
+1. `.agents/troublesolver.md` — the role card (a job description an agent host can read)
+2. `.claude/agents/troublesolver.md` — an extra copy for Claude Code if the project has `.claude/`
+3. a `troublesolver` entry in `.mcp.json` — **your existing MCP entries are preserved**, and the file is backed up first
+
+Prefer a command? `pip install -e .` gives you `tsolve` and `tsolve-mcp` globally. For Claude Code:
+
+```bash
+claude mcp add troublesolver -- tsolve-mcp
+```
+
+**What role it plays on your team: a modeling-and-verification position that will not puff you up.**
+It does not hand over a conclusion. It hands over a **machine-checked problem charter**, a
+**one-command-reproducible** solver and baseline, a **traceable ledger**, and a report that
+**states its own failure boundaries**.
+
+| MCP tool | What it does |
+|---|---|
+| `tsolve_charter_check` | Checkpoint ①: is the problem charter actually complete? |
+| `tsolve_charter_new` | Generate a blank problem-charter template |
+| `tsolve_solve` | Run the whole loop: formalize → baseline → model → falsify → ledger → deliver |
+| `tsolve_audit` | Stage 6 independent review: rerun in a temp dir + reconcile every number |
+| `tsolve_ledger_show` / `tsolve_ledger_check` | Inspect the ledger / pre-delivery reconciliation (P7) |
+
+**The host can tell whether the job passed** without reading logs: the returned text ends with
+`(exit code: N)`, and `N != 0` sets `isError = true`.
+
+→ Per-host setup: [`install/README.md`](install/README.md).
+→ Building the WorkBuddy expert card **from this repo**: [`packaging/README.md`](packaging/README.md).
+
 ## Repository layout
 
 ```
@@ -158,18 +200,22 @@ trouble-solver/
 │   └── 50_deliver.md           Delivery: package checklist and hard rules
 ├── src/troublesolver/
 │   ├── cli.py                  tsolve charter / ledger / solve / audit / agent
+│   ├── mcp_server.py           ★ MCP server (stdio): 6 tools any host can hire
 │   ├── charter.py              Problem-charter completeness check (checkpoint ①)
 │   ├── ledger.py               Ledger state machine + pre-delivery reconciliation (P7)
 │   ├── checks.py               ★ Runnable checkers + conclusion-type → mandatory-protocol matrix (the core of generality)
 │   ├── orchestrate.py          LLM orchestration: prompts + charter.md → case files → engine loop
 │   ├── case.py                 Case orchestration: the loop and the independent review
 │   └── report.py               Template rendering: numbers can only come from metrics.json
+├── agents/troublesolver.md     Role card: a job description any host can read (how you "hire" it)
+├── install/                    ★ One-command hiring: hire.sh + no-install MCP launcher + per-host setup
+├── packaging/                  Sources + build script for the WorkBuddy expert card (repo = single source of truth)
 ├── examples/
 │   ├── newsvendor_inventory/   Case A: inventory / stochastic optimization (9 ledger entries)
 │   ├── facility_coverage/      Case B: geometry / universal claims (7 entries, automatically caught a narrow-band trap)
 │   ├── loan_approval_threshold/ Case C: statistics / calibers (6 entries, consumer credit)
 │   └── fishery_msy/            Case D: biology / resource management (5 entries, narrow-band trap from a localized mortality band)
-├── tests/                      53 tests: "the guards actually fire" treated as tests
+├── tests/                      59 tests: "the guards actually fire" treated as tests
 └── docs/{methods.md,ledger.md,generalization.md,index.html}
 ```
 
@@ -193,8 +239,9 @@ out/                 Script outputs, not committed
 | v0.1 | Skeleton + three stages + ledger + one case end-to-end + independent review | **Done** |
 | v0.2 | **Protocol engine** (`checks.py`: seven runnable checkers) + **conclusion-type → mandatory-protocol matrix** + three heterogeneous cases (inventory / facility coverage / credit) + check verdicts in the golden regression | **Done** (44 tests) |
 | v0.3 | **LLM orchestration** (`tsolve agent`: prompts + charter.md → case files → loop) + 4th domain case (biology / resources) + English README | **Done** (53 tests) |
-| v0.4 | Report/chart output module (high-DPI, colored text banned, missing-glyph detection) + delivery-compliance mode | Planned |
-| v0.5 | Technical write-up + first public release | Planned |
+| v0.4 | **Hireable by any project**: MCP server (6 tools, cross-host) + role card `agents/` + one-command `install/hire.sh`; the WorkBuddy expert card is now **built from this repo** (removing the two-copies drift) | **Done** (59 tests) |
+| v0.5 | Report/chart output module (high-DPI, colored text banned, missing-glyph detection) + delivery-compliance mode | Planned |
+| v0.6 | Technical write-up + first public release | Planned |
 
 **Current boundary (judge for yourself whether it fits)**: the four stage prompts under `prompts/` are now
 wired to an LLM through `tsolve agent` — the LLM reads `charter.md` and generates

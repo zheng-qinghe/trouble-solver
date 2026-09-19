@@ -104,8 +104,9 @@ class TestMockGenerate(unittest.TestCase):
 class TestConfigClient(unittest.TestCase):
     def test_源码不含硬编码密钥(self):
         import re
-        src = open(os.path.join(os.path.dirname(orch.__file__), "orchestrate.py"),
-                   encoding="utf-8").read()
+        with open(os.path.join(os.path.dirname(orch.__file__), "orchestrate.py"),
+                  encoding="utf-8") as f:
+            src = f.read()
         # 真正的密钥形如 sk- 后跟一长串字母数字；文档里提到 "sk-" 前缀不算
         self.assertIsNone(re.search(r"sk-[A-Za-z0-9]{20,}", src),
                           "orchestrate.py 绝不能硬编码任何密钥")

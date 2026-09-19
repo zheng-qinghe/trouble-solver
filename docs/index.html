@@ -207,6 +207,7 @@
       <span class="pill">单文件状态</span>
       <span class="pill">Apache-2.0</span>
       <span class="pill">本地 CLI</span>
+      <span class="pill">MCP 可接入</span>
     </div>
     <h1>会自我证伪的<br>建模助手</h1>
     <p class="one">它不承诺"算得对"。它承诺：<b>你分得清哪一句是真的</b>——
@@ -226,7 +227,7 @@
     <div class="stats">
       <div class="stat b"><b>7 条</b><span>验证协议，已是可执行检查器</span></div>
       <div class="stat t"><b>4 个</b><span>异构案例，引擎零改动（库存随机 / 设施覆盖 / 信贷风控 / 渔业资源）</span></div>
-      <div class="stat o"><b>53 项</b><span>测试，含一组"故意做错看会不会放过去"的负例</span></div>
+      <div class="stat o"><b>59 项</b><span>测试，含一组"故意做错看会不会放过去"的负例</span></div>
       <div class="stat v"><b>100%</b><span>交付数字来自脚本，零手写</span></div>
     </div>
   </div>
@@ -285,7 +286,9 @@
     <h2>怎么用：一条命令跑通一个闭环</h2>
     <p class="lead">核心闭环不需要 API key、不需要数据库、不需要服务端 —— 一个案例 = 一个文件夹，
     状态全在文件里，看得见、改得动、能回滚。
-    只有可选的 LLM 编排（<code>tsolve agent</code>）才需要一个 key，且只从环境变量读，代码里搜不到。</p>
+    只有可选的 LLM 编排（<code>tsolve agent</code>）才需要一个 key，且只从环境变量读，代码里搜不到。<br>
+    它还能被<strong>雇进任何项目</strong>：<code>bash install/hire.sh &lt;你的项目&gt;</code> 会投递岗位说明书并接好 MCP 工具（6 个），
+    宿主直接判断它这次干活过没过（<code>exit code</code> → <code>isError</code>）。</p>
 
     <div class="steps" style="margin-top:26px">
       <div class="step">
@@ -717,9 +720,11 @@ tsolve audit mycase                     # 临时目录重跑 + 逐数字/逐检�
               <td><b style="color:var(--green)">已完成</b>（44 项测试通过）</td></tr>
           <tr><td class="mono">W3</td><td>LLM 编排层（<code>tsolve agent</code>：prompts + charter.md → 案例文件 → 引擎闭环）+ 第 4 个领域案例（生物 / 资源）+ 英文 README</td>
               <td><b style="color:var(--green)">已完成</b>（53 项测试通过）</td></tr>
-          <tr><td class="mono">W4</td><td>报告 / 图表 / 合规产出模块（600 dpi、禁彩色文字、缺字形检测、身份脱敏自检）</td>
+          <tr><td class="mono">W4</td><td>能被"雇"进任何项目：MCP server（6 个工具，跨宿主）+ 岗位说明书 <code>agents/</code> + 一键 <code>install/hire.sh</code>；WorkBuddy 专家包改为<strong>从本仓库构建</strong></td>
+              <td><b style="color:var(--green)">已完成</b>（59 项测试通过）</td></tr>
+          <tr><td class="mono">W5</td><td>报告 / 图表 / 合规产出模块（600 dpi、禁彩色文字、缺字形检测、身份脱敏自检）</td>
               <td style="color:var(--muted)">规划中</td></tr>
-          <tr><td class="mono">W5</td><td>技术文章 + 首个公开发布</td>
+          <tr><td class="mono">W6</td><td>技术文章 + 首个公开发布</td>
               <td style="color:var(--muted)">规划中</td></tr>
         </tbody>
       </table>
@@ -730,17 +735,21 @@ tsolve audit mycase                     # 临时目录重跑 + 逐数字/逐检�
 ├── prompts/            阶段提示词：00 引导提问 · 20 建模 · 30 证伪 · 50 交付
 ├── src/troublesolver/
 │   ├── cli.py          命令入口：charter / ledger / solve / audit / agent
+│   ├── mcp_server.py   ★ MCP server（stdio）：6 个工具，任何宿主都能把它"雇"进去
 │   ├── charter.py      问题说明书 12 节机器校验（卡点①）
 │   ├── checks.py       ★ 可执行检查器 + 结论类型→必跑协议矩阵（泛化核心）
 │   ├── ledger.py       台账状态机 + stale 依赖传播 + 交付前对账
 │   ├── orchestrate.py  LLM 编排：prompts + charter.md → 案例文件 → 引擎闭环
 │   ├── case.py         案例编排：solve 与 audit
 │   └── report.py       模板渲染：数字只能从 metrics.json 注入
+├── agents/troublesolver.md            岗位说明书：宿主可读的角色卡（用来"雇"进任何项目）
+├── install/                          ★ 一键雇佣：hire.sh + 免安装 MCP 启动器 + 各宿主接法
+├── packaging/                        WorkBuddy 专家包的定义源 + 构建脚本（仓库是唯一真源）
 ├── examples/newsvendor_inventory/    案例 A：零售库存（单 SKU 备货，报童模型）
 ├── examples/facility_coverage/       案例 B：园区设施（步道照明覆盖，几何 / 全称断言）
 ├── examples/loan_approval_threshold/ 案例 C：消费金融（信贷审批阈值，统计量 / 口径相关）
 ├── examples/fishery_msy/             案例 D：生物资源（渔业最大可持续产量 MSY，连续优化 / 全称断言 / 口径）
-├── tests/              53 项，含一组负例（"故意做错看会不会放过去"）
+├── tests/              59 项，含一组负例（"故意做错看会不会放过去"）
 ├── docs/               协议详解 · 台账详解 · 本发布页
 └── LICENSE             Apache-2.0</div>
   </div>

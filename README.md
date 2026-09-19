@@ -124,6 +124,47 @@ PYTHONPATH=src python3 -m troublesolver.cli agent path/to/newcase --dry-run  # �
   - 数字漂移：result.recommend_Q 期望 133，实测 134（容差 1e-09）
 ```
 
+## 把它雇到你的项目里（一条命令）
+
+> "任职"不是一句自我介绍，而是两样**能落地**的东西：一份**宿主读得懂的岗位说明书**
+> （`agents/troublesolver.md`）+ 一个**可被任何宿主调用的工具端点**（MCP server `tsolve-mcp`）。
+> 两者都在本仓库里 —— **任何人 clone 下来就能雇**。
+
+```bash
+git clone <repo> trouble-solver
+bash trouble-solver/install/hire.sh /path/to/your-project
+```
+
+它会往目标项目投递三样东西（**都可逆**，`--undo` 撤回）：
+
+1. `.agents/troublesolver.md` —— 岗位说明书（宿主可读的 agent 角色卡）
+2. `.claude/agents/troublesolver.md` —— 若项目里有 `.claude/`，额外投一份 Claude Code 项目级 subagent
+3. `.mcp.json` 里登记 `troublesolver` MCP server —— **保留你已有的 MCP 条目**，改动前先备份为 `.bak`
+
+装成命令也行：`pip install -e .` → `tsolve` 与 `tsolve-mcp` 全局可用。接 Claude Code：
+
+```bash
+claude mcp add troublesolver -- tsolve-mcp
+```
+
+**它在你团队里是什么角色：一个"不会替你吹牛"的建模与验证岗。** 交付的不是一段结论，而是
+一份**可机器校验**的《问题说明书》、一个**能一键复现**的求解脚本与基线、
+一张**可追溯台账**，以及一份**主动写清失效边界**的报告。
+
+| MCP 工具 | 干什么 |
+|---|---|
+| `tsolve_charter_check` | 卡点①：问题说明书写全了吗（12 节 / 口径表 / 未知项处理计划 / 用户确认） |
+| `tsolve_charter_new` | 生成《问题说明书》空白模板 |
+| `tsolve_solve` | 跑通闭环：形式化 → 基线 → 建模 → 证伪 → 台账 → 交付 |
+| `tsolve_audit` | 阶段 6 独立复核：临时目录重跑 + 逐数字 / 逐检查对账 |
+| `tsolve_ledger_show` / `tsolve_ledger_check` | 看台账 / 交付前对账（P7） |
+
+**宿主能直接判断它这次干活是否通过**：工具返回文本末尾带 `(exit code: N)`，
+`N != 0` 时 `isError = true` —— 不用人肉读日志。
+
+→ 各宿主接法见 [`install/README.md`](install/README.md)；
+WorkBuddy 专家卡怎么**从本仓库构建**见 [`packaging/README.md`](packaging/README.md)。
+
 ## 目录结构
 
 ```
@@ -135,18 +176,22 @@ trouble-solver/
 │   └── 50_deliver.md           交付：交付包清单与硬性规则
 ├── src/troublesolver/
 │   ├── cli.py                  tsolve charter / ledger / solve / audit / agent
+│   ├── mcp_server.py           ★ MCP server（stdio）：6 个工具，任何宿主都能把它"雇"进去
 │   ├── charter.py              问题说明书完整性校验（卡点①）
 │   ├── ledger.py               台账状态机 + 交付前对账（P7）
 │   ├── checks.py               ★ 可执行检查器 + 结论类型→必跑协议矩阵（泛化的核心）
 │   ├── orchestrate.py          LLM 编排：prompts + charter.md → 案例文件 → 引擎闭环
 │   ├── case.py                 案例编排：闭环与独立复核
 │   └── report.py               模板渲染：数字只能来自 metrics.json
+├── agents/troublesolver.md     岗位说明书：宿主可读的角色卡（用来"雇"进任何项目）
+├── install/                    ★ 一键雇佣：hire.sh + 免安装 MCP 启动器 + 各宿主接法
+├── packaging/                  WorkBuddy 专家包的定义源 + 构建脚本（仓库是唯一真源）
 ├── examples/
 │   ├── newsvendor_inventory/   案例 A：库存随机优化族（9 条台账）
 │   ├── facility_coverage/      案例 B：几何 / 全称断言族（7 条台账，自动抓到窄带陷阱）
 │   ├── loan_approval_threshold/ 案例 C：统计量 / 全称断言 / 口径相关族（6 条台账，金融风控）
 │   └── fishery_msy/            案例 D：生物 / 资源族（5 条台账，局部额外死亡带制造的窄带陷阱）
-├── tests/                      44 项：把"防护真的会拦"当成测试来跑
+├── tests/                      59 项：把"防护真的会拦"当成测试来跑
 └── docs/{methods.md,ledger.md,generalization.md}
 ```
 
@@ -170,8 +215,9 @@ out/                脚本产出，不入库
 | v0.1 | 骨架 + 三阶段 + 台账 + 一个案例跑通全闭环 + 独立复核 | **已完成** |
 | v0.2 | **协议引擎化**（`checks.py`：七条可执行检查器）+ **结论类型→必跑协议矩阵** + 三个异构案例（库存 / 设施覆盖 / 信贷风控）+ 检查结论纳入 golden 回归 | **已完成**（44 项测试通过） |
 | v0.3 | **LLM 编排层**（`tsolve agent`：读 charter.md + 阶段指令生成案例文件，再跑闭环）+ 第 4 个领域案例（生物 / 资源）+ 英文 README | **已完成**（53 项测试通过） |
-| v0.4 | 报告/图表产出模块（高分辨率输出、禁用彩色文字、缺字形检测）+ 交付合规模式 | 计划中 |
-| v0.5 | 技术文章 + 首个公开发布 | 计划中 |
+| v0.4 | **能被"雇"进任何项目**：MCP server（6 个工具，跨宿主）+ 岗位说明书 `agents/` + 一键 `install/hire.sh`；WorkBuddy 专家包改为**从本仓库构建**（消除两份拷贝漂移） | **已完成**（59 项测试通过） |
+| v0.5 | 报告/图表产出模块（高分辨率输出、禁用彩色文字、缺字形检测）+ 交付合规模式 | 计划中 |
+| v0.6 | 技术文章 + 首个公开发布 | 计划中 |
 
 **当前边界（自行判断能不能用）**：`prompts/` 的四个阶段指令现在**通过 `tsolve agent` 接上了 LLM 编排**——
 LLM 读 `charter.md` 生成 `solve.py` / `verify.py` / `ledger.spec.json` / 模板 / `expected.json`，

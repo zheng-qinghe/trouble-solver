@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# TroubleSolver MCP server（stdio，零第三方依赖）。
+# 在任意 MCP 宿主的配置里把 command 指向本脚本即可：
+#   { "mcpServers": { "troublesolver": { "command": "/path/to/bin/tsolve-mcp" } } }
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "${TSOLVE_PYTHON:-python3}" "$HERE/../skills/troublesolver/scripts/tsolve_mcp.py" "$@"

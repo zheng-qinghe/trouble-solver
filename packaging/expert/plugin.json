@@ -1,0 +1,66 @@
+{
+  "name": "troublesolver",
+  "version": "1.0.0",
+  "description": "A self-falsifying mathematical-modeling assistant: complete-problem intake, modeling, adversarial self-falsification, and a traceable ledger where no delivered number is hand-copied.",
+  "author": {
+    "name": "Shuo Yu",
+    "email": "coweijob@outlook.com"
+  },
+  "homepage": {
+    "url": "https://zheng-qinghe.github.io/trouble-solver/",
+    "type": "website"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "mathematical-modeling",
+    "verification",
+    "falsification",
+    "reproducibility",
+    "ledger",
+    "agent"
+  ],
+  "agents": ["./agents/troublesolver.md"],
+  "skills": ["./skills/troublesolver"],
+
+  "expertType": "agent",
+  "agentName": "troublesolver",
+
+  "displayName": {
+    "en": "TroubleSolver",
+    "zh": "TroubleSolver"
+  },
+  "profession": {
+    "en": "Mathematical Modeling Verification Expert",
+    "zh": "数学建模验证专家"
+  },
+  "displayDescription": {
+    "en": "Guides you to ask the problem fully, then models it, then actively hunts for its own counterexamples — every conclusion carries evidence and a recompute command, with zero hand-copied numbers.",
+    "zh": "先把问题问全、再科学建模，再主动搜自己的反例；每条结论都带证据和重算命令，交付数字零手写。"
+  },
+  "avatar": "avatars/expert.png",
+  "categoryId": "04-DataAI",
+  "defaultInitPrompt": {
+    "zh": "我有个业务问题想建模，先帮我把问题问全",
+    "en": "I have a business problem to model — first help me ask the problem completely"
+  },
+  "plugin": "troublesolver",
+  "tags": [
+    { "en": "Mathematical modeling", "zh": "数学建模" },
+    { "en": "Conclusion verification", "zh": "结论验证" },
+    { "en": "Reproducible delivery", "zh": "可复算交付" }
+  ],
+  "quickPrompts": [
+    {
+      "zh": "我有个业务问题想建模，先帮我把问题问全",
+      "en": "I have a business problem to model — first help me ask the problem completely"
+    },
+    {
+      "zh": "这个结论恒成立吗？帮我主动搜反例",
+      "en": "Does this conclusion hold universally? Actively hunt for counterexamples"
+    },
+    {
+      "zh": "审查我这份建模报告的失效边界与口径",
+      "en": "Review the failure boundaries and calibers of my modeling report"
+    }
+  ]
+}

@@ -201,6 +201,7 @@
 <section class="hero">
   <div class="wrap">
     <div class="badges">
+      <span class="pill">开源</span>
       <span class="pill">Python 3.9+</span>
       <span class="pill">零依赖</span>
       <span class="pill">单文件状态</span>
@@ -210,6 +211,11 @@
     <h1>会自我证伪的<br>建模助手</h1>
     <p class="one">它不承诺"算得对"。它承诺：<b>你分得清哪一句是真的</b>——
     每条结论都有状态、有证据、有一条能重算出它的命令。</p>
+    <p class="lead">
+      <b>TroubleSolver 是一个开源的、会自我证伪的建模 Agent。</b>
+      它先引导你把问题问全（<b>12 维度</b>《问题说明书》+ 卡点校验），再科学建模，
+      再<b>主动搜自己的反例</b>（七条可执行验证协议 P1–P7）；交付数字零手写、逐条可复算。
+    </p>
     <p class="lead">
       所有"AI 建模"工具都在解决<b>怎么写出来</b>（调 API 谁都会，这片是红海，
       还跟学术诚信打架）。TroubleSolver 解决的是另一个问题：
@@ -688,7 +694,8 @@ tsolve audit mycase                     # 临时目录重跑 + 逐数字/逐检�
       </div>
     </div>
     <div class="note" style="margin-top:18px">
-      <b>定位提醒：</b>它不是"自动解题神器"。它不替你想模型，也不替你写数字；
+      <b>定位提醒：</b>TroubleSolver 这个名字里的 <i>solver</i>，指的是<b>「求解过程可被验证」</b>，
+      不是<b>「自动解出答案」</b>——所以它不是"自动解题神器"，不替你想模型，也不替你写数字；
       它做两件事——<b>卡住不该往下走的</b>（两个人工卡点），
       以及<b>把结论钉在脚本上</b>（台账 + 占位符）。
     </div>

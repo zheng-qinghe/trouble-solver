@@ -1,4 +1,4 @@
-"""TroubleSolver —— 会自我证伪的建模助手（v0.2）。
+"""TroubleSolver —— 会自我证伪的建模助手（v0.3）。
 
 命令：
     tsolve charter new  <charter.md>     生成《问题说明书》空白模板

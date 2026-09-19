@@ -5,6 +5,11 @@
 > **verifiable ledger whose numbers a third party can recompute from a script**, and it
 > **tells you the conditions under which its own conclusions break**.
 
+> **Positioning (one line)**: an **open-source, self-falsifying modeling agent** — it first helps you
+> ask the problem completely (a 12-dimension problem charter + checkpoint review), then models it,
+> then **actively hunts for its own counterexamples** (seven executable verification protocols P1–P7);
+> no hand-copied numbers, every delivered figure recomputable.
+
 ```
 0 Formalize ─▶ [human: confirm the caliber]   business problem → math object / objective / constraints / calibers / acceptance criteria
 1 Baseline  ─▶ [human: baseline reproducible] start with the dumbest trustworthy baseline; otherwise "how much did we improve" is meaningless
